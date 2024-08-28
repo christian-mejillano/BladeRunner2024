@@ -1,11 +1,27 @@
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+public class Receive implements Runnable{
 
-import java.io.IOException;
-import java.net.DatagramSocket; 
-public class Receive {
+    private DatagramSocket socket;
 
-     public static void main(String[] args) throws IOException 
-    { 
-    DatagramSocket ds = new DatagramSocket(1234); 
-    byte[] receiveData = new byte[1024];
+    public Receive(DatagramSocket socket) {
+        this.socket = socket;
+    }
+
+    @Override
+    public void run() {
+        try {
+            byte[] buffer = new byte[1024];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
+            while (true) {
+                socket.receive(packet);
+                String receivedMessage = new String(packet.getData(), 0, packet.getLength());
+                System.out.println("Received: " + receivedMessage);
+           
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
