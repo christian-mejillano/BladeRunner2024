@@ -1,5 +1,9 @@
 import java.net.DatagramSocket;
 public class CCP {
+    String client_type; 
+    String client_id;
+    int timestamp;
+    String status; 
        public static void main(String[] args) {
         try {
             DatagramSocket socket = new DatagramSocket();
