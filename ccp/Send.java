@@ -4,6 +4,13 @@ import java.net.InetAddress;
 
 public class Send {
     private DatagramSocket socket;
+    private String client_type;
+    private String message;
+    private int timestamp;
+    private String client_id;
+    private String status;
+    private String station_id;
+    private String action;
 
     public Send(DatagramSocket socket) {
         this.socket = socket;
@@ -15,4 +22,25 @@ public class Send {
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
         socket.send(packet);
     }
+
+  
+    public void setClientType(String client_type) { 
+        this.client_type = client_type; 
+    }
+    public void setMessage(String message) { 
+        this.message = message; }
+    public void setTimestamp(int timestamp) { this.timestamp = timestamp; 
+    }
+    public void setClientId(String client_id) { 
+        this.client_id = client_id; 
+    }
+    public void setStatus(String status) { 
+        this.status = status; 
+    }
+    public void setStationId(String station_id) { 
+        this.station_id = station_id; 
+    }
+    public void setAction(String action) {
+         this.action = action;
+        }
 }
