@@ -1,8 +1,15 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-public class Receive implements Runnable{
 
+public class Receive implements Runnable {
     private DatagramSocket socket;
+    private String client_type;
+    private String message;
+    private String action;
+    private int timestamp;
+    private String status;
+    private String station_id;
+    private boolean hasReceivedMessage = false;
 
     public Receive(DatagramSocket socket) {
         this.socket = socket;
@@ -16,12 +23,40 @@ public class Receive implements Runnable{
 
             while (true) {
                 socket.receive(packet);
-                String receivedMessage = new String(packet.getData(), 0, packet.getLength());
-                System.out.println("Received: " + receivedMessage);
-           
+                message = new String(packet.getData(), 0, packet.getLength());
+                client_type = extractClientType(message);  
+                hasReceivedMessage = true;
+                System.out.println("Received: " + message);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public String getClientType() { 
+        return client_type; 
+    }
+    public String getMessage() { 
+        return message; 
+    }
+    public String getAction() { 
+        return action; 
+    }
+    public int getTimestamp() { 
+        return timestamp; 
+    }
+    public String getStatus() { 
+        return status; 
+    }
+    public String getStationId() { 
+        return station_id; 
+    }
+    public boolean hasReceivedMessage() { 
+        return hasReceivedMessage;
+     }
+
+    private String extractClientType(String message) {
+       
+        return "MCP"; 
     }
 }
