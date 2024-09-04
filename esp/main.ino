@@ -3,7 +3,7 @@
 #include "WiFi.h"
 
 const char* ssid = "networkName";
-const char* password = "networkPassword";
+const char* password = "password";
  
 void setup() {
 	

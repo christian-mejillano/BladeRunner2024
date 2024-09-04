@@ -4,10 +4,10 @@ import java.net.InetAddress;
 
 public class Send {
     private DatagramSocket socket;
-    private String client_type;
+    private String client_type = "ccp";
     private String message;
     private int timestamp;
-    private String client_id;
+    private String client_id = "BR";
     private String status;
     private String station_id;
     private String action;
