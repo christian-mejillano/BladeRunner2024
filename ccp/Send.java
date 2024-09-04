@@ -43,4 +43,15 @@ public class Send {
     public void setAction(String action) {
          this.action = action;
         }
+        //MCP-
+        //CCIN:handshake with MCP 
+        //STAT: send current status to MCP
+        //STAT: inform MCP at station 
+
+        //ESP32-
+        //EXEC: receive messgae for break runner to move forward (slow)
+        //EXEC: receive messgae for break runner to move forward (fast)
+        //EXEC: receive messgae for break runner to stop
+        //DOPN: doors open
+        //DCLS: doors closed
 }

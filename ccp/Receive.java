@@ -59,4 +59,15 @@ public class Receive implements Runnable {
        
         return "MCP"; 
     }
+    //MCP-
+    //AKIN: receive acknowledge message from MCP
+    //STAT: Receive status every 2 seconds from MCP
+    //EXEC: receive messgae for break runner to move forward (slow)
+    //EXEC: receive messgae for break runner to move forward (fast)
+    //EXEC: receive messgae for break runner to stop
+    //DOPN: doors open
+    //DCLS: doors closed
+
+    //ESP32- 
+    
 }
