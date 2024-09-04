@@ -10,7 +10,8 @@ public class CCP {
         final String MCP_IP_ADDRESS = "10.20.30.1";
         final int MCP_PORT = 2001;
         final int ESP32_PORT = 4500; //CHANGE IF NEEDED 
-
+//Set up MCP and ESP32 connection 
+//boolean connected 
         try {
             DatagramSocket socket = new DatagramSocket();
 
@@ -20,7 +21,7 @@ public class CCP {
             send.sendMessage("Initial message from CCP", MCP_IP_ADDRESS, MCP_PORT);
 
             Thread receiveThread = new Thread(receive);
-            receiveThread.start();
+            Thread.sleep(500);
 
             while (true) {
                 if (receive.hasReceivedMessage()) {

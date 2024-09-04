@@ -49,9 +49,9 @@ public class Send {
         //STAT: inform MCP at station 
 
         //ESP32-
-        //EXEC: receive messgae for break runner to move forward (slow)
-        //EXEC: receive messgae for break runner to move forward (fast)
-        //EXEC: receive messgae for break runner to stop
+        //EXEC: receive messgae for blade runner to move forward (slow)
+        //EXEC: receive messgae for blade runner to move forward (fast)
+        //EXEC: receive messgae for blade runner to stop
         //DOPN: doors open
         //DCLS: doors closed
 }
