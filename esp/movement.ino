@@ -1,4 +1,8 @@
 #include <SoftwareSerial.h>
+
+#define MAXSPEED 10
+#define SPEEDINC 2
+
 class Movement  {
   private:
     int speed;
@@ -10,8 +14,8 @@ public:
     }
  
 void setSpeed(int s) { // doesnt exceed max speed
-      if (s > MaxSpeed) {
-        speed = MaxSpeed;
+      if (s > MAXSPEED) {
+        speed = MAXSPEED;
       } else {
         speed = s;
       }
@@ -29,7 +33,7 @@ void stop() {
    
 void acceleration() {
     if (speed < MaxSpeed ){
-        speed = speed + 2;
+        speed = speed + SPEEDINC;
     }
 }
 
