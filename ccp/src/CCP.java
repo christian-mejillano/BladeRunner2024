@@ -11,31 +11,37 @@ public class CCP {
         final String MCP_IP_ADDRESS = "10.20.30.1";
         final int MCP_PORT = 2001;
         final int ESP32_PORT = 4500; //CHANGE IF NEEDED 
-    //Set up MCP and ESP32 connection 
-    //boolean connected 
+        //Set up MCP and ESP32 connection 
+        //boolean connected 
         try {
+            //Create new socket
             DatagramSocket socket = new DatagramSocket();
-
+            
+            // Instantiate send and receive objects
             Send send = new Send(socket);
             Receive receive = new Receive(socket);
+            // Send initalisation message to MCP
+            send.sendInitalisation(MCP_IP_ADDRESS, MCP_PORT);
 
-            send.sendMessage("Initial message from CCP", MCP_IP_ADDRESS, MCP_PORT);
-
-            Thread receiveThread = new Thread(receive);
-            Thread.sleep(500);
-
+            // Thread.sleep(500);
+            //Runs forevery
             while (true) {
+                //If a message has been received by the receive object
                 if (receive.hasReceivedMessage()) {
-                    String message = receive.getMessage();
+                    //If the message has been sent by the MCP forward it onto the ESP
                     if (receive.getClientType().equals("MCP")) {
-                        send.sendMessage(message, "ESP32_IP_Address", ESP32_PORT);
-                    } else if (receive.getClientType().equals("ESP")) {
-                        send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                        send.sendMessage(receive, "ESP32_IP_Address", ESP32_PORT);
+                    } 
+                    //If the message has been sent by the ESP forward it onto the MCP
+                    else if (receive.getClientType().equals("ESP")) {
+                        send.sendMessage(receive, MCP_IP_ADDRESS, MCP_PORT);
                     }
                 }
                 
             }
-        } catch (Exception e) {
+        } 
+        //In case there are any errors print out the stack trace
+        catch (Exception e) {
             e.printStackTrace();
         }
     }
