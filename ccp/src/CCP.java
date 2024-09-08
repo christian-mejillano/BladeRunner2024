@@ -1,4 +1,5 @@
 import java.net.DatagramSocket;
+import org.json.simple.*;
 
 public class CCP {
     String client_type;
@@ -10,8 +11,8 @@ public class CCP {
         final String MCP_IP_ADDRESS = "10.20.30.1";
         final int MCP_PORT = 2001;
         final int ESP32_PORT = 4500; //CHANGE IF NEEDED 
-//Set up MCP and ESP32 connection 
-//boolean connected 
+    //Set up MCP and ESP32 connection 
+    //boolean connected 
         try {
             DatagramSocket socket = new DatagramSocket();
 

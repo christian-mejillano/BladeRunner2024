@@ -1,5 +1,6 @@
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import org.json.simple.*;
 
 public class Receive implements Runnable {
     private DatagramSocket socket;
@@ -56,7 +57,6 @@ public class Receive implements Runnable {
      }
 
     private String extractClientType(String message) {
-       
         return "MCP"; 
     }
     //MCP-
