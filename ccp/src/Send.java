@@ -1,7 +1,4 @@
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 
 import org.json.simple.*;
 
@@ -23,28 +20,9 @@ public class Send {
 
     //Function to send the message given a receive object, ip address and port
     //The receive parameter will need to change to a JSON object as right now this is just forwarding whatever is being received
-    public void sendMessage(Receive receive, String ipAddress, int port) throws Exception {
-        //Call the updateValues using the receive object and convert it to String
-        String jsonToSend = updateValues(receive).toString();
+    public void sendMessage(String jsonToSend, String ipAddress, int port) throws Exception {
         //Create a new packet and send it to the given ip address and port
         byte[] buffer = jsonToSend.getBytes();
-        InetAddress address = InetAddress.getByName(ipAddress);
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
-        socket.send(packet);
-    }
-
-    //Initialisation function to send to the MCP
-    @SuppressWarnings("unchecked")
-    public void sendInitalisation(String ipAddress, int port) throws Exception{
-        //Create a new JSON object with the client id, timestamp and status
-        JSONObject jsonToSend = new JSONObject();
-        jsonToSend.put("client_id", getClientId());
-        jsonToSend.put("timestamp", getTimestamp());
-        jsonToSend.put("status", getStatus());
-
-        //Convert the JSON object into string and send it to the MCP
-        String toSend = jsonToSend.toString();
-        byte[] buffer = toSend.getBytes();
         InetAddress address = InetAddress.getByName(ipAddress);
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
         socket.send(packet);
@@ -72,21 +50,7 @@ public class Send {
         //Return the JSON object
         return jsonToSend;
     }
-
-    //Need to do
-
-    //MCP-
-    //CCIN:handshake with MCP 
-    //STAT: send current status to MCP
-    //STAT: inform MCP at station 
-
-    //ESP32-
-    //EXEC: receive messgae for blade runner to move forward (slow)
-    //EXEC: receive messgae for blade runner to move forward (fast)
-    //EXEC: receive messgae for blade runner to stop
-    //DOPN: doors open
-    //DCLS: doors closed   
-  
+    
     //Getters and Setters for all the private variables in this class
     public void setClientType(String client_type) { 
         this.client_type = client_type; 
