@@ -11,8 +11,7 @@ public class CCP {
         final int MCP_PORT = 2001;
         final int ESP32_PORT = 4500; //CHANGE IF NEEDED 
 //Set up MCP and ESP32 connection 
-//boolean connected 
-        final boolean connected = false; 
+//boolean connected
         try {
             DatagramSocket socket = new DatagramSocket();
 
