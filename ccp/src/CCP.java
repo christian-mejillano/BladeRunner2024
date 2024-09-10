@@ -27,6 +27,7 @@ public class CCP {
             // Instantiate send and receive objects
             Send send = new Send(socket);
             Receive receive = new Receive(socket);
+            heartbeatTimer = new Timer();
 
             // Need to implement connection error checking for ESP and MCP
             // Need to implement heartbeat every 2 seconds to/from ESP and CCP
