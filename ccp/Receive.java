@@ -59,7 +59,7 @@ public class Receive implements Runnable {
        
         return "MCP"; 
     }
-    //MCP-
+    //MCP- JSON
     //AKIN: receive acknowledge message from MCP
     //STAT: Receive status every 2 seconds from MCP
     //EXEC: receive messgae for blade runner to move forward (slow)
