@@ -1,17 +1,25 @@
 import java.net.*;
+import java.util.TimerTask;
+import java.util.Timer;
+
 import org.json.simple.*;
 
 public class CCP {
     private static boolean mcpConnection;
     private static boolean espConnection;
+    private static final long HEARTBEAT_INTERVAL = 2000; // 2 seconds
+    private static Timer heartbeatTimer;
+    
 
     public static void main(String[] args) {
+         //CHANGE IF NEEDED 
+        //Set up MCP and ESP32 connection 
+        //boolean connected 
         final String MCP_IP_ADDRESS = "10.20.30.1";
         final String ESP_IP_ADDRESS = "10";
         final int MCP_PORT = 2001;
-        final int ESP32_PORT = 4500; //CHANGE IF NEEDED 
-        //Set up MCP and ESP32 connection 
-        //boolean connected 
+        final int ESP32_PORT = 4500;
+
         try {
             //Create new socket
             DatagramSocket socket = new DatagramSocket();
@@ -21,7 +29,19 @@ public class CCP {
             Receive receive = new Receive(socket);
 
             // Need to implement connection error checking for ESP and MCP
-            // Need to implement heartbeat every 2 seconds to/from ESP and MCP
+            // Need to implement heartbeat every 2 seconds to/from ESP and CCP
+            heartbeatTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                    String heartbeatMessage = "HEARTBEAT";
+                    send.sendMessage(heartbeatMessage, MCP_IP_ADDRESS, MCP_PORT);
+                    send.sendMessage(heartbeatMessage, ESP_IP_ADDRESS, ESP32_PORT);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, 0, 2000);
 
             // Thread.sleep(500);
             //Runs forever
@@ -68,7 +88,11 @@ public class CCP {
                     else if (receive.getClientType().equals("ESP")) {
                         String message = null;
                         //If the command is ACKS then set the ESP connection flag to true
-                        if(receive.getAction().equals("ACKS")){
+                        if (receive.getAction().equals("HEARTBEAT_ACK")) {
+                            setESPConnection(true);
+                            System.out.println("Received heartbeat acknowledgment from ESP32");
+                        }
+                        else if(receive.getAction().equals("ACKS")){
                             setESPConnection(true);
                         }
                         //If the command is STAN then call the station method

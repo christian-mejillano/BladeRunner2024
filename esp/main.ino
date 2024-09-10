@@ -3,6 +3,9 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
+//pins
+
+
 /* WiFi network name and password */
 const char * ssid = "dd-wrt";
 const char * pwd = "password";
@@ -55,6 +58,34 @@ void loop() {
     }
     Serial.print("Received from server: ");
     Serial.println(incomingPacket);
+
+    if (receivedMessage == "HEARTBEAT") {
+      // Send acknowledgment back to Java program
+      String ackMessage = "HEARTBEAT_ACK";
+      udp.beginPacket(udp.remoteIP(), udp.remotePort());
+      udp.write(ackMessage.c_str());
+      udp.endPacket();
+      Serial.println("Sent heartbeat acknowledgment to Java program");
+
+      // Update last heartbeat received time
+      lastHeartbeatReceived = currentMillis;
+    }
+  }
+
+  if (currentMillis - lastHeartbeatReceived > heartbeatTimeout) {
+    Serial.println("Heartbeat lost! Connection to Java program is down.");
+    // Implement reconnection logic or alerts if needed
+    lastHeartbeatReceived = currentMillis; // Reset to avoid continuous alerts
+  }
+
+    // Send heartbeat to Java program every 2 seconds
+  if (currentMillis - previousMillis >= heartbeatInterval) {
+    previousMillis = currentMillis;
+    String heartbeatMessage = "HEARTBEAT";
+    udp.beginPacket(udpAddress, udpPort);
+    udp.write(heartbeatMessage.c_str());
+    udp.endPacket();
+    Serial.println("Sent heartbeat to Java program");
   }
 
   // Check WiFi connection and reconnect if needed
