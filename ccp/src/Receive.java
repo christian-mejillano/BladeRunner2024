@@ -40,6 +40,7 @@ public class Receive implements Runnable {
             
             //Convert it to String
             message = new String(packet.getData(), 0, packet.getLength());
+            System.out.println(message);
             //Set flag to true
             if(packet != null || message != null){
                 hasReceivedMessage = true;
