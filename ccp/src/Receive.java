@@ -64,21 +64,35 @@ public class Receive implements Runnable {
             return;
         }
         //Set all the private variables according to the data recieved from the packet
-        setClientType((String) jsonMessage.get("client_type"));
-        setMessage((String) jsonMessage.get("message"));
-        setAction((String) jsonMessage.get("action"));
-        setTimestamp((Integer) jsonMessage.get("timestamp"));
-        setStatus((String) jsonMessage.get("status"));
-        setStationId((String) jsonMessage.get("station_id"));
-        if(this.getAction().equals("FAST")){
-            this.setLightColour("green");
+        //Also do null checks
+        if(jsonMessage.get("client_type") != null){
+            setClientType((String) jsonMessage.get("client_type"));
         }
-        else if(this.getAction().equals("SLOW")){
-            this.setLightColour("yellow");
+        if(jsonMessage.get("client_type") != null){
+            setMessage((String) jsonMessage.get("message"));
         }
-        else if(this.getAction().equals("STOP")){
-            this.setLightColour("red");
+        if(jsonMessage.get("client_type") != null){
+            setAction((String) jsonMessage.get("action"));
         }
+        if(jsonMessage.get("client_type") != null){
+            setTimestamp((Integer) jsonMessage.get("timestamp"));
+        }
+        if(jsonMessage.get("client_type") != null){
+            setStatus((String) jsonMessage.get("status"));
+        }
+        if(jsonMessage.get("client_type") != null){
+            setStationId((String) jsonMessage.get("station_id"));
+        }
+        
+        // if(this.getAction().equals("FAST")){
+        //     this.setLightColour("green");
+        // }
+        // else if(this.getAction().equals("SLOW")){
+        //     this.setLightColour("yellow");
+        // }
+        // else if(this.getAction().equals("STOP")){
+        //     this.setLightColour("red");
+        // }
     }
 
     //If the command received is AKIN from the MCP
