@@ -9,16 +9,15 @@ public class CCP {
     private static boolean espConnection;
     private static final long HEARTBEAT_INTERVAL = 2000; // 2 seconds
     private static Timer heartbeatTimer;
-    
 
     public static void main(String[] args) {
          //CHANGE IF NEEDED 
         //Set up MCP and ESP32 connection 
         //boolean connected 
-        final String MCP_IP_ADDRESS = "10.20.30.1";
-        final String ESP_IP_ADDRESS = "10";
-        final int MCP_PORT = 2001;
-        final int ESP32_PORT = 4500;
+        final String MCP_IP_ADDRESS = "10.20.30.177";
+        final String ESP_IP_ADDRESS = "10.20.30.1";
+        final int MCP_PORT = 2000;
+        final int ESP32_PORT = 3024;
 
         try {
             //Create new socket
@@ -36,16 +35,21 @@ public class CCP {
                 public void run() {
                     try {
                     String heartbeatMessage = "HEARTBEAT";
-                    send.sendMessage(heartbeatMessage, MCP_IP_ADDRESS, MCP_PORT);
                     send.sendMessage(heartbeatMessage, ESP_IP_ADDRESS, ESP32_PORT);
-                    } catch (Exception e) {
+
+                    // String message = receive.akinCommandMCP();
+                    // setMCPConnection(true);
+                    // send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                    } 
+                    catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-            }, 0, 2000);
+            }, 0, HEARTBEAT_INTERVAL); 
 
             // Thread.sleep(500);
             //Runs forever
+
             while (true) {
                 // Call the run method from the receive object
                 receive.run();
