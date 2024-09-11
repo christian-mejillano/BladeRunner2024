@@ -30,26 +30,26 @@ public class CCP {
 
             // Need to implement connection error checking for ESP and MCP
             // Need to implement heartbeat every 2 seconds to/from ESP and CCP
-            heartbeatTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                    String heartbeatMessage = "HEARTBEAT";
-                    send.sendMessage(heartbeatMessage, ESP_IP_ADDRESS, ESP32_PORT);
+            // heartbeatTimer.schedule(new TimerTask() {
+            //     @Override
+            //     public void run() {
+            //         try {
+            //         // String heartbeatMessage = "HEARTBEAT";
+            //         // send.sendMessage(heartbeatMessage, ESP_IP_ADDRESS, ESP32_PORT);
 
-                    // String message = receive.akinCommandMCP();
-                    // setMCPConnection(true);
-                    // send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
-                    } 
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, 0, HEARTBEAT_INTERVAL); 
+            //         String message = receive.akinCommandMCP();
+            //         setMCPConnection(true);
+            //         send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+            //         } 
+            //         catch (Exception e) {
+            //             e.printStackTrace();
+            //         }
+            //     }
+            // }, 0, HEARTBEAT_INTERVAL); 
 
             // Thread.sleep(500);
             //Runs forever
-
+            
             while (true) {
                 // Call the run method from the receive object
                 receive.run();

@@ -22,26 +22,33 @@ public class Receive implements Runnable {
         this.socket = socket;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void run() {
         try {
             //Create empty packet
             byte[] buffer = new byte[1024];
+            socket.setSoTimeout(500);
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
-            while (true) {
+            try{
                 //Receive the packet
                 socket.receive(packet);
-                //Convert it to String
-                message = new String(packet.getData(), 0, packet.getLength());
-                //Set flag to true
-                if(packet != null || message != null){
-                    hasReceivedMessage = true;
-                    //Call updateValues, print out the message and set the flag to false
-                    updateValues(message);
-                    System.out.println("Received: " + message);
-                } 
             }
+            catch(SocketTimeoutException e){
+            }
+            System.out.println("Received packet: "+ packet);
+            
+            //Convert it to String
+            message = new String(packet.getData(), 0, packet.getLength());
+            //Set flag to true
+            if(packet != null || message != null){
+                hasReceivedMessage = true;
+                //Call updateValues, print out the message and set the flag to false
+                updateValues(message);
+                System.out.println("Received: " + message);
+            } 
+
+            System.out.println("Converted message: " + message);
         } 
         //In case there are any errors print out the stack trace
         catch (Exception e) {
@@ -68,19 +75,19 @@ public class Receive implements Runnable {
         if(jsonMessage.get("client_type") != null){
             setClientType((String) jsonMessage.get("client_type"));
         }
-        if(jsonMessage.get("client_type") != null){
+        if(jsonMessage.get("message") != null){
             setMessage((String) jsonMessage.get("message"));
         }
-        if(jsonMessage.get("client_type") != null){
+        if(jsonMessage.get("action") != null){
             setAction((String) jsonMessage.get("action"));
         }
-        if(jsonMessage.get("client_type") != null){
+        if(jsonMessage.get("timestamp") != null){
             setTimestamp((Integer) jsonMessage.get("timestamp"));
         }
-        if(jsonMessage.get("client_type") != null){
+        if(jsonMessage.get("status") != null){
             setStatus((String) jsonMessage.get("status"));
         }
-        if(jsonMessage.get("client_type") != null){
+        if(jsonMessage.get("station_id") != null){
             setStationId((String) jsonMessage.get("station_id"));
         }
         
