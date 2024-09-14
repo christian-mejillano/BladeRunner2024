@@ -7,7 +7,7 @@ public class Send {
     private DatagramSocket socket;
     private String client_type = "ccp";
     private String message;
-    private int timestamp;
+    private Long timestamp;
     private String client_id = "BR";
     private String status;
     private String station_id;
@@ -68,11 +68,11 @@ public class Send {
         return this.message;
     }
     
-    public void setTimestamp(int timestamp) { 
+    public void setTimestamp(Long timestamp) { 
         this.timestamp = timestamp; 
     }
 
-    public int getTimestamp(){
+    public Long getTimestamp(){
         return this.timestamp;
     }
 

@@ -12,7 +12,7 @@ public class Receive implements Runnable {
     private String message;
     private String light_colour;
     private String action;
-    private int timestamp;
+    private Long timestamp;
     private String status;
     private String station_id;
     private boolean hasReceivedMessage = false;
@@ -22,7 +22,6 @@ public class Receive implements Runnable {
         this.socket = socket;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void run() {
         try {
@@ -36,20 +35,21 @@ public class Receive implements Runnable {
             }
             catch(SocketTimeoutException e){
             }
-            System.out.println("Received packet: "+ packet);
             
             //Convert it to String
             message = new String(packet.getData(), 0, packet.getLength());
-            System.out.println(message);
+            int messageByteSum = 0;
+            for(int i = 0; i <= message.getBytes().length - 1; i++){
+                messageByteSum += message.getBytes()[i];
+            }
+
             //Set flag to true
-            if(packet != null || message != null){
+            if(packet != null && message != null && messageByteSum != 0){
                 hasReceivedMessage = true;
                 //Call updateValues, print out the message and set the flag to false
                 updateValues(message);
                 System.out.println("Received: " + message);
             } 
-
-            System.out.println("Converted message: " + message);
         } 
         //In case there are any errors print out the stack trace
         catch (Exception e) {
@@ -83,7 +83,7 @@ public class Receive implements Runnable {
             setAction((String) jsonMessage.get("action"));
         }
         if(jsonMessage.get("timestamp") != null){
-            setTimestamp((Integer) jsonMessage.get("timestamp"));
+            setTimestamp((Long) jsonMessage.get("timestamp"));
         }
         if(jsonMessage.get("status") != null){
             setStatus((String) jsonMessage.get("status"));
@@ -220,11 +220,11 @@ public class Receive implements Runnable {
         this.action = action;
     }
 
-    public int getTimestamp() { 
+    public Long getTimestamp() { 
         return timestamp; 
     }
 
-    public void setTimestamp(int timestamp){
+    public void setTimestamp(Long timestamp){
         this.timestamp = timestamp;
     }
 

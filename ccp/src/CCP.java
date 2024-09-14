@@ -21,7 +21,7 @@ public class CCP {
 
         try {
             //Create new socket
-            DatagramSocket socket = new DatagramSocket();
+            DatagramSocket socket = new DatagramSocket(2000);
             
             // Instantiate send and receive objects
             Send send = new Send(socket);
