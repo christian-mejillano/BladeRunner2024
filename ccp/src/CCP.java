@@ -11,9 +11,7 @@ public class CCP {
     private static Timer heartbeatTimer;
 
     public static void main(String[] args) {
-         //CHANGE IF NEEDED 
         //Set up MCP and ESP32 connection 
-        //boolean connected 
         final String MCP_IP_ADDRESS = "10.20.30.177";
         final String ESP_IP_ADDRESS = "10.20.30.1";
         final int MCP_PORT = 2000;
@@ -21,11 +19,12 @@ public class CCP {
 
         try {
             //Create new socket
-            DatagramSocket socket = new DatagramSocket(2000);
-            
+            DatagramSocket mcpSocket = new DatagramSocket(MCP_PORT);
+            DatagramSocket espSocket = new DatagramSocket(ESP32_PORT);
             // Instantiate send and receive objects
-            Send send = new Send(socket);
-            Receive receive = new Receive(socket);
+            Receive mcpReceive = new ReceiveMCP(mcpSocket);
+            Receive espReceive = new ReceiveESP(espSocket);
+            Send send = new Send(mcpSocket);
             heartbeatTimer = new Timer();
 
             // Need to implement connection error checking for ESP and MCP
@@ -34,12 +33,12 @@ public class CCP {
                 @Override
                 public void run() {
                     try {
-                    String heartbeatMessage = "HEARTBEAT";
-                    send.sendMessage(heartbeatMessage, ESP_IP_ADDRESS, ESP32_PORT);
+                    // String heartbeatMessage = "HEARTBEAT";
+                    // send.sendMessage(heartbeatMessage, ESP_IP_ADDRESS, ESP32_PORT);
 
-                    // String message = receive.akinCommandMCP();
-                    // setMCPConnection(true);
-                    // send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                    String message = mcpReceive.akinCommandMCP();
+                    setMCPConnection(true);
+                    send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
                     } 
                     catch (Exception e) {
                         e.printStackTrace();
@@ -52,74 +51,77 @@ public class CCP {
             
             while (true) {
                 // Call the run method from the receive object
-                receive.run();
+                mcpReceive.run();
                 //If a message has been received by the receive object
-                if (receive.hasReceivedMessage()) {
+                if (mcpReceive.hasReceivedMessage()) {
                     //If the message has been sent by the MCP
-                    if (receive.getClientType() != null && receive.getClientType().equals("MCP")) {
+                    if (mcpReceive.getClientType() != null && mcpReceive.getClientType().equals("MCP")) {
                         //Message variable is what is going to be sent
                         String message = null;
                         //ipAddress and port are initially set to the ESP but may change depending on the command
                         String ipAddress = ESP_IP_ADDRESS;
                         int port = ESP32_PORT;
                         //If the command is AKIN then call the akin method and set the ipAddress and port to the MCP
-                        if(receive.getAction() != null){
-                            if(receive.getAction().equals("AKIN")){
-                                message = receive.akinCommandMCP();
+                        if(mcpReceive.getAction() != null){
+                            if(mcpReceive.getAction().equals("AKIN")){
+                                message = mcpReceive.akinCommandMCP();
                                 setMCPConnection(true);
                                 ipAddress = MCP_IP_ADDRESS;
                                 port = MCP_PORT;
                             }
                             //If the command is STAT then call the status method and set the ipAddress and port to the MCP
-                            else if(receive.getAction().equals("STAT")){
-                                message = receive.statusCommandMCP();
+                            else if(mcpReceive.getAction().equals("STAT")){
+                                message = mcpReceive.statusCommandMCP();
                                 ipAddress = MCP_IP_ADDRESS;
                                 port = MCP_PORT;
                             }
                             //If the command is exec then call the exec method
-                            else if(receive.getAction().equals("EXEC")){
-                                message = receive.execCommandMCP();
+                            else if(mcpReceive.getAction().equals("EXEC")){
+                                message = mcpReceive.execCommandMCP();
                             }
                             //If the command is door close or open then call the doors method
-                            else if(receive.getAction().equals("DOPN") || receive.getAction().equals("DCLS")){
-                                message = receive.doorsCommandMCP();
+                            else if(mcpReceive.getAction().equals("DOPN") || mcpReceive.getAction().equals("DCLS")){
+                                message = mcpReceive.doorsCommandMCP();
                             }
                         }
                         //If the message isn't null then send it to the specified ip address and port, then set the receivedMessage variable to false in the receive object
                         if(message != null){
                             send.sendMessage(message, ipAddress, port);
-                            receive.setReceivedMessage(false);
+                            mcpReceive.setReceivedMessage(false);
                         }
                     } 
                     //If the message has been sent by the ESP
-                    else if (receive.getClientType() != null && receive.getClientType().equals("ESP")) {
+                    else if (mcpReceive.getClientType() != null && mcpReceive.getClientType().equals("ESP")) {
                         String message = null;
-                        if(receive.getAction() != null){
+                        if(mcpReceive.getAction() != null){
                             //If the command is ACKS then set the ESP connection flag to true
-                            if (receive.getAction().equals("HEARTBEAT_ACK")) {
+                            if (mcpReceive.getAction().equals("HEARTBEAT_ACK")) {
                                 setESPConnection(true);
                                 System.out.println("Received heartbeat acknowledgment from ESP32");
                             }
-                            else if(receive.getAction().equals("ACKS")){
+                            else if(mcpReceive.getAction().equals("ACKS")){
                                 setESPConnection(true);
                             }
                             //If the command is STAN then call the station method
-                            else if(receive.getAction().equals("STAN")){
-                                message = receive.stationCommandESP();
+                            else if(mcpReceive.getAction().equals("STAN")){
+                                message = mcpReceive.stationCommandESP();
                             }
                             //If the action is STAT then call the status method
-                            else if(receive.getAction().equals("STAT")){
-                                receive.statusCommandESP();
+                            else if(mcpReceive.getAction().equals("STAT")){
+                                mcpReceive.statusCommandESP();
                             }
                             //If the message isn't null then send it to the MCP and set the received message flag to false
                             if(message != null){
                                 send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
-                                receive.setReceivedMessage(false);
+                                mcpReceive.setReceivedMessage(false);
                             } 
                         }
                     }
                 }
                 
+                espReceive.run();
+                
+                if(espReceive.hasReceivedMessage()){}
             }
         } 
         //In case there are any errors print out the stack trace

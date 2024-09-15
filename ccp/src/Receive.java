@@ -108,7 +108,7 @@ public class Receive implements Runnable {
     public String akinCommandMCP(){
         JSONObject message = new JSONObject();
         message.put("client_type", "ccp");
-        message.put("message", "CCIN");
+        message.put("message", "AKIN");
         message.put("client_id", this.getClientId());
         message.put("timestamp", new Date().getTime() / 1000);
         return message.toString();
