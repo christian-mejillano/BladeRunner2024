@@ -32,8 +32,6 @@ public class ReceiveMCP extends Receive{
             if(jsonMessage.get("action") != null){
                 setAction((String) jsonMessage.get("action"));
             }
-            //Set the flag to false
-            setReceivedMessage(false);
         }
     }
 

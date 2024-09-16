@@ -42,8 +42,6 @@ public class ReceiveESP extends Receive{
             if(jsonMessage.get("light_colour") != null){
                 setActualLightColour((String) jsonMessage.get("light_colour"));
             }
-            // Set the flag to false
-            setReceivedMessage(false);
         }
     }
 

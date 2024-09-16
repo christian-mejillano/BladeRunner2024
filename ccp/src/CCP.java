@@ -130,6 +130,8 @@ public class CCP {
                             mcpReceive.setReceivedMessage(false);
                         }
                     }
+                    //Set the flag to false
+                    mcpReceive.setReceivedMessage(false);
                 }
                 
                 //Call the run method for espReceive
@@ -172,6 +174,8 @@ public class CCP {
                             espReceive.setReceivedMessage(false);
                         }
                     }
+                    //Set the flag to false
+                    espReceive.setReceivedMessage(false);
                 }
             }
         } 
