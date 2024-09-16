@@ -8,7 +8,7 @@ public class CCP {
     private static boolean mcpConnection;
     private static boolean espConnection;
     //Variables for sending a message at set intervals
-    private static final long HEARTBEAT_INTERVAL = 2000; // 2 seconds
+    private static final long HEARTBEAT_INTERVAL = 2000; //2 seconds
     private static Timer heartbeatTimer;
 
     public static void main(String[] args) {
