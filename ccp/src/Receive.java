@@ -1,11 +1,10 @@
 import java.net.*;
 import java.util.Date;
-
 import org.json.simple.*;
 import org.json.simple.parser.*;
 
 public class Receive implements Runnable {
-    //Variables for Receive class
+    //Variables for Receive class that are shared by the MCP and ESP
     private DatagramSocket socket;
     public static String client_type = "ccp";
     public static String client_id = "BRXX";
@@ -44,10 +43,11 @@ public class Receive implements Runnable {
             //Set flag to true
             if(message != null && messageByteSum != 0){
                 hasReceivedMessage = true;
-                //Call updateValues, print out the message and set the flag to false
+                //Call updateCommonValues, update the rawMessage variable and print out the message
                 setRawMessage(message);
                 updateCommonValues();
                 System.out.println("Received: " + message);
+
             } 
         } 
         //In case there are any errors print out the stack trace
@@ -56,6 +56,7 @@ public class Receive implements Runnable {
         }
     }
 
+    //Function that returns a JSON Object using the objects' rawMessage variable
     public JSONObject stringToJSON(){
         JSONObject jsonMessage = null;
         try{
@@ -71,16 +72,15 @@ public class Receive implements Runnable {
         return jsonMessage;
     }
 
-    //Function that will update all the private variables given a raw message in String from
+    //Function that will update all the private variables given the local variable rawMessage
     public void updateCommonValues(){
-        //Declare JSON object which will just set all the values to null if the message isn't in proper form or there is no message
-        //Set all the private variables according to the data recieved from the packet
-        //Also do null checks
+        //Create a jsonObject using the rawMessage
         JSONObject jsonMessage = stringToJSON();
-
+        //If the message is null then exit the function
         if(jsonMessage == null){
             return;
         }
+        //Set all the private variables according to the data recieved from the packet
         if(jsonMessage.get("message") != null){
             setMessage((String) jsonMessage.get("message"));
         }

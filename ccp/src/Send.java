@@ -21,8 +21,11 @@ public class Send {
         socket.send(packet);
     }
 
+    //Create a message template (just all the values that are common across all message)
+    //All other message creation methods in this class call this method since it contains variables that don't change such as
+    //client_type, client_id and timestamp
     @SuppressWarnings("unchecked")
-    public JSONObject messageTemplate(){
+    private JSONObject messageTemplate(){
         JSONObject message = new JSONObject();
         message.put("client_type", Receive.client_type);
         message.put("client_id", Receive.client_id);
@@ -30,6 +33,7 @@ public class Send {
         return message;
     }
 
+    //Create AKIN message to send to the ESP
     @SuppressWarnings("unchecked")
     public String send_esp_akin(){
         JSONObject message = messageTemplate();
@@ -37,6 +41,7 @@ public class Send {
         return message.toString();
     }
 
+    //Create STAT message to send to the ESP
     @SuppressWarnings("unchecked")
     public String send_esp_stat(){
         JSONObject message = messageTemplate();
@@ -44,6 +49,7 @@ public class Send {
         return message.toString();
     }
 
+    //Create EXEC message to send to the ESP
     @SuppressWarnings("unchecked")
     public String send_esp_exec(String light_colour, String action){
         JSONObject message = messageTemplate();
@@ -53,6 +59,7 @@ public class Send {
         return message.toString();
     }
 
+    //Crate DOOR message to send to the ESP
     @SuppressWarnings("unchecked")
     public String send_esp_door(String action){
         JSONObject message = messageTemplate();
@@ -61,6 +68,7 @@ public class Send {
         return message.toString();
     }
 
+    //Create CCIN message to send to the MCP
     @SuppressWarnings("unchecked")
     public String send_mcp_ccin(){
         JSONObject message = messageTemplate();
@@ -68,6 +76,7 @@ public class Send {
         return message.toString();
     }
 
+    //Create STAT message to send to the MCP
     @SuppressWarnings("unchecked")
     public String send_mcp_stat(String status){
         JSONObject message = messageTemplate();
@@ -76,6 +85,7 @@ public class Send {
         return message.toString();
     }
 
+    //Create STAN message to send to the MCP
     @SuppressWarnings("unchecked")
     public String send_mcp_stan(String status, String station_id){
         JSONObject message = messageTemplate();
