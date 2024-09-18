@@ -1,105 +1,155 @@
-// ESP32 WiFi connection to Arduino
-
 #include <WiFi.h>
 #include <WiFiUdp.h>
 
-//pins
+// WiFi network name and password
+const char *ssid = "ENGG2K3K";
 
+// IP address and port to send UDP data to (Java program)
+const char *udpAddress = "10.20.30.124"; // Java program IP address
+const uint16_t udpPort = 3024;
+IPAddress local_IP(10, 20, 30, 1);
+IPAddress gateway(10, 20, 30, 1);
+IPAddress subnet(255, 255, 255, 0);
 
-/* WiFi network name and password */
-const char * ssid = "dd-wrt";
-const char * pwd = "password";
-
-// IP address and port to send UDP data to
-const char * udpAddress = "10.20.30.1";
+// Create UDP instance
+WiFiUDP udp;
+const char *udpAddress = "10.20.30.1";
 const uint16_t udpPort = 2001;
 
-//Create UDP instance
-WiFiUDP udp;
-
 unsigned long previousMillis = 0;
-const long interval = 10000; // interval to check WiFi connection
+const long heartbeatInterval = 2000; // 2 seconds
+unsigned long lastHeartbeatReceived = 0;
+const long heartbeatTimeout = 5000; // 5 seconds timeout
 
-void setup() {
+// adding sensor pins
+const int triggerPin = 5;
+const int echoPin = 6;
+
+void setup()
+{
   Serial.begin(115200);
+  pinMode(motorPin1, OUTPUT);
+  pinMode(motorPin2, OUTPUT);
 
   // Connect to the WiFi network
-  WiFi.begin(ssid, pwd);
+  WiFi.config(local_IP, gateway, subnet);
+  WiFi.begin(ssid);
 
   // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(1000);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
+  Serial.println();
+  Serial.println("Connected to WiFi");
   Serial.println(WiFi.localIP());
 
-  // Initialize UDP
+  // Initialse UDP
   udp.begin(udpPort);
+  Serial.println("UDP client started");
+
+  // initialse sensors
+  pinMode(triggerPin, OUTPUT);
+  pinMode(echoPin, INPUT);
 }
 
-void loop() {
-  // Send data to the server
-  String message = "hello world";
-  udp.beginPacket(udpAddress, udpPort);
-  udp.write((const uint8_t*)message.c_str(), message.length());
-  udp.endPacket();
+void loop()
+{
+  unsigned long currentMillis = millis();
 
-  // Wait for a response from the server
+  // Send heartbeat acknowledgment if heartbeat received
   int packetSize = udp.parsePacket();
-  if (packetSize) {
-    char incomingPacket[255];
-    int len = udp.read(incomingPacket, 255);
-    if (len > 0) {
+  if (packetSize)
+  {
+    char incomingPacket[512];
+    int len = udp.read(incomingPacket, 512);
+    if (len > 0)
+    {
       incomingPacket[len] = '\0';
     }
+    String receivedMessage = String(incomingPacket);
     Serial.print("Received from server: ");
-    Serial.println(incomingPacket);
+    Serial.println(receivedMessage);
 
-    if (receivedMessage == "HEARTBEAT") {
+    if (receivedMessage == "HEARTBEAT")
+    {
       // Send acknowledgment back to Java program
       String ackMessage = "HEARTBEAT_ACK";
       udp.beginPacket(udp.remoteIP(), udp.remotePort());
-      udp.write(ackMessage.c_str());
+      udp.write((const uint8_t *)ackMessage.c_str(), ackMessage.length());
       udp.endPacket();
       Serial.println("Sent heartbeat acknowledgment to Java program");
 
-      // Update last heartbeat received time
-      lastHeartbeatReceived = currentMillis;
+      // handle the action from the CCP JSON packet
+      const char *action = doc["action"];
+      if (strcmp(action, "FORWARD") == 0)
+      {
+        handleForward();
+      }
+      else if (strcmp(action, "BACKWARD") == 0)
+      {
+        handleBackward();
+      }
+      else if (strcmp(action, "STOP") == 0)
+      {
+        handleStop();
+      }
     }
   }
 
-  if (currentMillis - lastHeartbeatReceived > heartbeatTimeout) {
+  // Check for heartbeat timeout
+  if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
+  {
     Serial.println("Heartbeat lost! Connection to Java program is down.");
     // Implement reconnection logic or alerts if needed
     lastHeartbeatReceived = currentMillis; // Reset to avoid continuous alerts
   }
 
-    // Send heartbeat to Java program every 2 seconds
-  if (currentMillis - previousMillis >= heartbeatInterval) {
+  // Send heartbeat to Java program every 2 seconds
+  if (currentMillis - previousMillis >= heartbeatInterval)
+  {
     previousMillis = currentMillis;
     String heartbeatMessage = "HEARTBEAT";
     udp.beginPacket(udpAddress, udpPort);
-    udp.write(heartbeatMessage.c_str());
+    udp.write((const uint8_t *)heartbeatMessage.c_str(), heartbeatMessage.length());
+
     udp.endPacket();
     Serial.println("Sent heartbeat to Java program");
   }
 
-  // Check WiFi connection and reconnect if needed
-  unsigned long currentMillis = millis();
-  if ((WiFi.status() != WL_CONNECTED) && (currentMillis - previousMillis >= interval)) {
-    Serial.println("Reconnecting to WiFi...");
-    WiFi.disconnect();
-    WiFi.reconnect();
-    previousMillis = currentMillis;
-    if (WiFi.status() == WL_CONNECTED) {
-      Serial.println("Reconnected to WiFi.");
-    }
-  }
+  // send sensor distance over udp
+  float distance = getDistance();
 
-  // Wait for 1 second before next loop
-  delay(1000);
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+  
+  String distanceMsg = "DISTANCE:" + String(distance);
+  udp.beginPacket(udpAddress, udpPort);
+  udp.write((const uint8_t *)distanceMsg.c_str(), distanceMsg.length());
+  udp.endPacket();
+  Serial.println("Sent distance data to Java program");
+
+  // Wait before next iteration
+  delay(10);
+}
+
+// measures the distance to an object in cm
+float getDistance()
+{
+  digitalWrite(triggerPin, LOW);
+  delayMicroseconds(2);
+
+  // send a pulse
+  digitalWrite(triggerPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(triggerPin, LOW);
+
+  // measure the echo time in microseconds
+  long duration = pulseIn(echoPin, HIGH);
+
+  // calculate the distance in cm
+  float distance = (duration * 0.0343) / 2; // speed of sound = 343 m/s
+  return distance;
 }

@@ -1,17 +1,10 @@
 import java.net.*;
-
+import java.util.Date;
 import org.json.simple.*;
 
 public class Send {
     //Variables for Send class
     private DatagramSocket socket;
-    private String client_type = "ccp";
-    private String message;
-    private int timestamp;
-    private String client_id = "BR";
-    private String status;
-    private String station_id;
-    private String action;
 
     //Constructor
     public Send(DatagramSocket socket) {
@@ -28,83 +21,76 @@ public class Send {
         socket.send(packet);
     }
 
-    //Function that will update the values given a receive object and will return a JSON object based on the values received
+    //Create a message template (just all the values that are common across all message)
+    //All other message creation methods in this class call this method since it contains variables that don't change such as
+    //client_type, client_id and timestamp
     @SuppressWarnings("unchecked")
-    public JSONObject updateValues(Receive receive){
-        //Update the necessary variables
-        setMessage(receive.getMessage());
-        setTimestamp(receive.getTimestamp());
-        setStatus(receive.getStatus());
-        setStationId(receive.getStationId());
-        setAction(receive.getAction());
-
-        //Create a new JSON object with all the private variables from this class
-        JSONObject jsonToSend = new JSONObject();
-        jsonToSend.put("client_id", getClientId());
-        jsonToSend.put("message", getMessage());
-        jsonToSend.put("timestamp", getTimestamp());
-        jsonToSend.put("status", getStatus());
-        jsonToSend.put("staion_id", getStationId());
-        jsonToSend.put("action", getAction());
-
-        //Return the JSON object
-        return jsonToSend;
-    }
-    
-    //Getters and Setters for all the private variables in this class
-    public void setClientType(String client_type) { 
-        this.client_type = client_type; 
+    private JSONObject messageTemplate(){
+        JSONObject message = new JSONObject();
+        message.put("client_type", Receive.client_type);
+        message.put("client_id", Receive.client_id);
+        message.put("timestamp", new Date().getTime() / 1000);
+        return message;
     }
 
-    public String getClientType(){
-        return this.client_type;
+    //Create AKIN message to send to the ESP
+    @SuppressWarnings("unchecked")
+    public String send_esp_akin(){
+        JSONObject message = messageTemplate();
+        message.put("message", "AKIN");
+        return message.toString();
     }
 
-    public void setMessage(String message) { 
-        this.message = message; 
+    //Create STAT message to send to the ESP
+    @SuppressWarnings("unchecked")
+    public String send_esp_stat(){
+        JSONObject message = messageTemplate();
+        message.put("message", "STAT");
+        return message.toString();
     }
 
-    public String getMessage(){
-        return this.message;
-    }
-    
-    public void setTimestamp(int timestamp) { 
-        this.timestamp = timestamp; 
-    }
-
-    public int getTimestamp(){
-        return this.timestamp;
+    //Create EXEC message to send to the ESP
+    @SuppressWarnings("unchecked")
+    public String send_esp_exec(String light_colour, String action){
+        JSONObject message = messageTemplate();
+        message.put("message", "EXEC");
+        message.put("action", action);
+        message.put("light_colour", light_colour);
+        return message.toString();
     }
 
-    public void setClientId(String client_id) { 
-        this.client_id = client_id; 
+    //Crate DOOR message to send to the ESP
+    @SuppressWarnings("unchecked")
+    public String send_esp_door(String action){
+        JSONObject message = messageTemplate();
+        message.put("message", "DOOR");
+        message.put("action", action);
+        return message.toString();
     }
 
-    public String getClientId(){
-        return this.client_id;
+    //Create CCIN message to send to the MCP
+    @SuppressWarnings("unchecked")
+    public String send_mcp_ccin(){
+        JSONObject message = messageTemplate();
+        message.put("message", "CCIN");
+        return message.toString();
     }
 
-    public void setStatus(String status) { 
-        this.status = status; 
+    //Create STAT message to send to the MCP
+    @SuppressWarnings("unchecked")
+    public String send_mcp_stat(String status){
+        JSONObject message = messageTemplate();
+        message.put("message", "STAT");
+        message.put("status", status);
+        return message.toString();
     }
 
-    public String getStatus() { 
-        return this.status; 
+    //Create STAN message to send to the MCP
+    @SuppressWarnings("unchecked")
+    public String send_mcp_stan(String status, String station_id){
+        JSONObject message = messageTemplate();
+        message.put("message", "STAT");
+        message.put("status", status);
+        return message.toString();
     }
-
-    public void setStationId(String station_id) { 
-        this.station_id = station_id; 
-    }
-
-    public String getStationId() { 
-        return this.station_id; 
-    }
-
-    public void setAction(String action) {
-         this.action = action;
-    }
-
-    public String getAction() {
-        return this.action;
-   }
 }
