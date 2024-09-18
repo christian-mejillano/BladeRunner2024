@@ -85,10 +85,8 @@ public class CCP {
                     if (mcpReceive.getIntendedClientID().equals(Receive.client_id) && mcpReceive.getIntendedClientType().equals(Receive.client_type)) {
                         //Message variable is what is going to be sent depending on the received message
                         String message = null;
-                        //Sending variables
-                        String ip_address = ESP_IP_ADDRESS;
-                        int port = ESP32_PORT;
-                         //Sending variables
+                        //Variable to check the destination of the message
+                        String destination = "ESP";
                         if(mcpReceive.getMessage() != null){
                             //If the message received is AKIN then set the MCPConnection variable to true
                             if(mcpReceive.getMessage().equals("AKIN")){
@@ -98,8 +96,7 @@ public class CCP {
                             else if(mcpReceive.getMessage().equals("STAT")){
                                 setMCPConnection(true);
                                 message = sendMCP.send_mcp_stat(espReceive.getStatus());
-                                ip_address = MCP_IP_ADDRESS;
-                                port = MCP_PORT;
+                                destination = "MCP";
                             }
                             //If the command is EXEC then set the lights accordingly
                             else if(mcpReceive.getMessage().equals("EXEC")){
@@ -127,9 +124,15 @@ public class CCP {
                             }
                         }
 
-                        //If the message isn't null then send it to the specified ip address and port, then set the receivedMessage variable to false in the receive object
+                        //If the message isn't null then send it to the destination using the specified ip address and port, then set the receivedMessage variable to false in the receive object
                         if(message != null){
-                            sendESP.sendMessage(message, ip_address, port);
+                            if(destination.equals("ESP")){
+                                sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
+                            }
+                            else{
+                                sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                            }
+                            
                             mcpReceive.setReceivedMessage(false);
                         }
                     }
@@ -147,10 +150,8 @@ public class CCP {
                     if (true) {
                         //Message variable is what is going to be sent depending on the received message
                         String message = null;
-                        //Sending variables
-                        String ip_address = MCP_IP_ADDRESS;
-                        int port = MCP_PORT;
-                         //Sending variables
+                        //Variable to check the destination of the message
+                        String destination = "MCP";
                         if(espReceive.getMessage() != null){
                             //If the message received is ACKS then set the ESPConnection variable to true
                             if(espReceive.getMessage().equals("ACKS")){
@@ -162,8 +163,7 @@ public class CCP {
                                 //If the actual light colour on the BR isn't the intended light colour then resend the previous EXEC message to the ESP
                                 if(espReceive.getActualLightColour() != espReceive.getActualLightColour()){
                                     message = sendESP.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
-                                    ip_address = ESP_IP_ADDRESS;
-                                    port = ESP32_PORT;
+                                    destination = "ESP";
                                 }
                             }
                             //If the message received is STAN then create a message for the MCP letting it know that the BR has arrived at a station
@@ -172,9 +172,15 @@ public class CCP {
                             }
                         }
                         
-                        //If the message isn't null then send it to the specified ip address and port, then set the receivedMessage variable to false in the receive object
+                        //If the message isn't null then send it to the destination using the specified ip address and port, then set the receivedMessage variable to false in the receive object
                         if(message != null){
-                            sendESP.sendMessage(message, ip_address, port);
+                            if(destination.equals("MCP")){
+                                sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                            }
+                            else{
+                                sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
+                            }
+                            
                             espReceive.setReceivedMessage(false);
                         }
                     }
