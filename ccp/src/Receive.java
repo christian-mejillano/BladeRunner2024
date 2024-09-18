@@ -67,7 +67,7 @@ public class Receive implements Runnable {
         //Stop running if there is a Parse Exception
         catch (ParseException e){
             e.printStackTrace();
-            return null;
+            return new JSONObject();
         }
         return jsonMessage;
     }

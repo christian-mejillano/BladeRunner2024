@@ -13,7 +13,7 @@ public class CCP {
 
     public static void main(String[] args) {
         //MCP and ESP32 connection variables
-        final String MCP_IP_ADDRESS = "192.168.0.89";
+        final String MCP_IP_ADDRESS = "10.20.30.11";
         final String ESP_IP_ADDRESS = "10.20.30.1";
         final int MCP_PORT = 2000;
         final int ESP32_PORT = 3024;
@@ -27,7 +27,8 @@ public class CCP {
             ReceiveMCP mcpReceive = new ReceiveMCP(mcpSocket);
             ReceiveESP espReceive = new ReceiveESP(espSocket);
             //Instanstiate Send Object and new Timer 
-            Send send = new Send(mcpSocket);
+            Send sendMCP = new Send(mcpSocket);
+            Send sendESP = new Send(espSocket);
             heartbeatTimer = new Timer();
 
             // Untested connection status checking:
@@ -60,12 +61,14 @@ public class CCP {
                 public void run() {
                     try {
                         //Send a STAT message to the MCP
-                        String message = send.send_mcp_stat(espReceive.getStatus());
-                        send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                        String message = sendMCP.send_mcp_stat(espReceive.getStatus());
+                        // sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                        // System.out.println("Sending" + message);
                         //Send a STAT message to the ESP
-                        message = send.send_esp_stat();
-                        send.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
-
+                        message = sendESP.send_esp_stat();
+                        sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
+                        System.out.println("Sending" + message);
+                        
                     } 
                     catch (Exception e) {
                         e.printStackTrace();
@@ -94,7 +97,7 @@ public class CCP {
                             //If the command is STAT then create a STAT message using the send object and change the destination to the MCP
                             else if(mcpReceive.getMessage().equals("STAT")){
                                 setMCPConnection(true);
-                                message = send.send_mcp_stat(espReceive.getStatus());
+                                message = sendMCP.send_mcp_stat(espReceive.getStatus());
                                 ip_address = MCP_IP_ADDRESS;
                                 port = MCP_PORT;
                             }
@@ -112,21 +115,21 @@ public class CCP {
                                     espReceive.setIntendedLightColour("GREEN");
                                 }
                                 //Create EXEC message
-                                message = send.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
+                                message = sendESP.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
                             }
                             //If the command is door close or open then create the according message
                             else if(mcpReceive.getMessage().equals("DOPN")){
-                                message = send.send_esp_door("OPEN");
+                                message = sendESP.send_esp_door("OPEN");
                             }
 
                             else if(mcpReceive.getMessage().equals("DCLS")){
-                                message = send.send_esp_door("CLOSE");
+                                message = sendESP.send_esp_door("CLOSE");
                             }
                         }
 
                         //If the message isn't null then send it to the specified ip address and port, then set the receivedMessage variable to false in the receive object
                         if(message != null){
-                            send.sendMessage(message, ip_address, port);
+                            sendESP.sendMessage(message, ip_address, port);
                             mcpReceive.setReceivedMessage(false);
                         }
                     }
@@ -140,7 +143,8 @@ public class CCP {
                 //If a message has been received on the ESP Port
                 if(espReceive.hasReceivedMessage()){
                     //If the message was intended for a CCP and in particular our CCP
-                    if (espReceive.getIntendedClientID().equals(Receive.client_id) && espReceive.getIntendedClientType().equals(Receive.client_type)) {
+                    // espReceive.getIntendedClientID().equals(Receive.client_id) && espReceive.getIntendedClientType().equals(Receive.client_type)
+                    if (true) {
                         //Message variable is what is going to be sent depending on the received message
                         String message = null;
                         //Sending variables
@@ -157,20 +161,20 @@ public class CCP {
                                 setESPConnection(true);
                                 //If the actual light colour on the BR isn't the intended light colour then resend the previous EXEC message to the ESP
                                 if(espReceive.getActualLightColour() != espReceive.getActualLightColour()){
-                                    message = send.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
+                                    message = sendESP.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
                                     ip_address = ESP_IP_ADDRESS;
                                     port = ESP32_PORT;
                                 }
                             }
                             //If the message received is STAN then create a message for the MCP letting it know that the BR has arrived at a station
                             if(espReceive.getMessage().equals("STAN")){
-                                message = send.send_mcp_stan(espReceive.getStatus(), espReceive.getStationID());
+                                message = sendESP.send_mcp_stan(espReceive.getStatus(), espReceive.getStationID());
                             }
                         }
                         
                         //If the message isn't null then send it to the specified ip address and port, then set the receivedMessage variable to false in the receive object
                         if(message != null){
-                            send.sendMessage(message, ip_address, port);
+                            sendESP.sendMessage(message, ip_address, port);
                             espReceive.setReceivedMessage(false);
                         }
                     }
