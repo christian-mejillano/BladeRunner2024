@@ -60,7 +60,7 @@ public class CCP {
                 @Override
                 public void run() {
                     //Send a STAT message to the MCP
-                    String message = sendMCP.send_mcp_stat(espReceive.getStatus());
+                    String message = sendMCP.send_mcp_stat("");
                     // sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
                     // System.out.println("Sending" + message);
                     //Send a STAT message to the ESP
