@@ -37,10 +37,8 @@ public class Receive implements Runnable {
                 //Receive the packet
                 socket.receive(packet);
             }
-            catch(IOException e){
-                System.out.println("There was an IOException whilst receiving the packet. Line 38 Receive.java");
-                System.exit(0);
-            }
+            //Just need to catch the exception to satisfy the socket.receive class requirements
+            catch(IOException e){}
             
             //Convert it to String
             message = new String(packet.getData(), 0, packet.getLength());
