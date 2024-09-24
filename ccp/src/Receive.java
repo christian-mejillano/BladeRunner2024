@@ -40,20 +40,20 @@ public class Receive implements Runnable {
             //Just need to catch the exception to satisfy the socket.receive class requirements
             catch(IOException e){}
             
-            //Convert it to String
-            message = new String(packet.getData(), 0, packet.getLength());
+            //Convert recieved message to String
+            String fullMessage = new String(packet.getData(), 0, packet.getLength());
             int messageByteSum = 0;
-            for(int i = 0; i <= message.getBytes().length - 1; i++){
-                messageByteSum += message.getBytes()[i];
+            for(int i = 0; i <= fullMessage.getBytes().length - 1; i++){
+                messageByteSum += fullMessage.getBytes()[i];
             }
 
             //Set flag to true
-            if(message != null && messageByteSum != 0){
+            if(fullMessage != null && messageByteSum != 0){
                 hasReceivedMessage = true;
                 //Call updateCommonValues, update the rawMessage variable and print out the message
-                setRawMessage(message);
+                setRawMessage(fullMessage);
                 updateCommonValues();
-                System.out.println("Received: " + message);
+                System.out.println("Received: " + fullMessage);
 
             } 
         } 
