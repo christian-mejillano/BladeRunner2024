@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.*;
 import java.util.Date;
 import org.json.simple.*;
@@ -13,12 +14,24 @@ public class Send {
 
     //Function to send the message given a receive object, ip address and port
     //The receive parameter will need to change to a JSON object as right now this is just forwarding whatever is being received
-    public void sendMessage(String jsonToSend, String ipAddress, int port) throws Exception {
+    public void sendMessage(String jsonToSend, String ipAddress, int port){
         //Create a new packet and send it to the given ip address and port
         byte[] buffer = jsonToSend.getBytes();
-        InetAddress address = InetAddress.getByName(ipAddress);
+        InetAddress address = null;
+        try{
+            address = InetAddress.getByName(ipAddress);
+        }
+        catch(UnknownHostException e){
+            System.out.println("There was an error with the address. Line 21 Send.java");
+            System.exit(0);
+        }
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
-        socket.send(packet);
+        try{
+            socket.send(packet);
+        }
+        catch(IOException e){
+            System.out.println("There was an error with sending the message. Line 30 Send.java");
+        }
     }
 
     //Create a message template (just all the values that are common across all message)

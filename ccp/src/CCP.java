@@ -59,20 +59,14 @@ public class CCP {
             heartbeatTimer.schedule(new TimerTask() {
                 @Override
                 public void run() {
-                    try {
-                        //Send a STAT message to the MCP
-                        String message = sendMCP.send_mcp_stat(espReceive.getStatus());
-                        // sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
-                        // System.out.println("Sending" + message);
-                        //Send a STAT message to the ESP
-                        message = sendESP.send_esp_stat();
-                        sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
-                        System.out.println("Sending" + message);
-                        
-                    } 
-                    catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    //Send a STAT message to the MCP
+                    String message = sendMCP.send_mcp_stat(espReceive.getStatus());
+                    // sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                    // System.out.println("Sending" + message);
+                    //Send a STAT message to the ESP
+                    message = sendESP.send_esp_stat();
+                    sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
+                    System.out.println("Sending" + message);
                 }
             }, 0, HEARTBEAT_INTERVAL); 
 
@@ -189,7 +183,7 @@ public class CCP {
                 }
             }
         } 
-        //In case there are any errors print out the stack trace
+        //In case there are any errors that haven't been addressed, print out the stack trace
         catch (Exception e) {
             e.printStackTrace();
         }

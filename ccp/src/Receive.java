@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.net.*;
 import java.util.Date;
 import org.json.simple.*;
@@ -22,15 +23,23 @@ public class Receive implements Runnable {
     @Override
     public void run() {
         try {
-            //Create empty packet
+            //Create empty buffer
             byte[] buffer = new byte[1024];
-            socket.setSoTimeout(500);
+            try{
+                //Only "receive" the packet for 500ms
+                socket.setSoTimeout(500);
+            }
+            //No need for printing any errors since this is intended and we want the program to stop after 500ms
+            catch(SocketException e){}
+            //Create a new packet using the buffer
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             try{
                 //Receive the packet
                 socket.receive(packet);
             }
-            catch(SocketTimeoutException e){
+            catch(IOException e){
+                System.out.println("There was an IOException whilst receiving the packet. Line 38 Receive.java");
+                System.exit(0);
             }
             
             //Convert it to String
@@ -52,6 +61,7 @@ public class Receive implements Runnable {
         } 
         //In case there are any errors print out the stack trace
         catch (Exception e) {
+            System.out.println("There was some error when running the try method in the receive class.");
             e.printStackTrace();
         }
     }
