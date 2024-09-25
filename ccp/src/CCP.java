@@ -1,4 +1,5 @@
 import java.net.*;
+import java.time.Instant;
 import java.util.TimerTask;
 import java.util.Timer;
 import org.json.simple.*;
@@ -7,13 +8,15 @@ public class CCP {
     //Variables to be used for connection status checking
     private static boolean mcpConnection;
     private static boolean espConnection;
+    private static boolean espStatAck;
     //Variables for sending a message at set intervals
     private static final long HEARTBEAT_INTERVAL = 2000; //2 seconds
     private static Timer heartbeatTimer;
 
     public static void main(String[] args) {
         //MCP and ESP32 connection variables
-        final String MCP_IP_ADDRESS = "10.20.30.11";
+        //10.20.30.11
+        final String MCP_IP_ADDRESS = "10.20.30.40";
         final String ESP_IP_ADDRESS = "10.20.30.1";
         final int MCP_PORT = 2000;
         final int ESP32_PORT = 3024;
@@ -30,29 +33,6 @@ public class CCP {
             Send sendMCP = new Send(mcpSocket);
             Send sendESP = new Send(espSocket);
             heartbeatTimer = new Timer();
-
-            // Untested connection status checking:
-                // while(!mcpConnection){
-                //     try{
-                //         String message = send.send_mcp_ccin();
-                //         setMCPConnection(true);
-                //         send.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
-                //     } 
-                //     catch (Exception e) {
-                //         e.printStackTrace();
-                //     }
-                // }
-
-                // while(!espConnection){
-                //     try{
-                //         String message = send.send_esp_akin();
-                //         setMCPConnection(true);
-                //         send.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
-                //     } 
-                //     catch (Exception e) {
-                //         e.printStackTrace();
-                //     }
-                // }
             
             //Runs every 2 seconds given the HEARTBEAT_INTERVAL variable
             //Sends STAT message to ESP and CCP every 2 seconds
@@ -60,15 +40,27 @@ public class CCP {
                 @Override
                 public void run() {
                     //Send a STAT message to the MCP
-                    String message = sendMCP.send_mcp_stat("");
-                    // sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
-                    // System.out.println("Sending" + message);
+                    String message = sendMCP.send_mcp_ccin();
+                    sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
+                    System.out.println("Sending MCP: " + message);
                     //Send a STAT message to the ESP
                     message = sendESP.send_esp_stat();
                     sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
-                    System.out.println("Sending" + message);
+                    System.out.println("Sending ESP: " + message);
                 }
             }, 0, HEARTBEAT_INTERVAL); 
+
+            heartbeatTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    if(!getESP_ACK()){
+                        System.out.println("Lost connection with ESP");
+                    }
+                    else{
+                        setESP_ACK(false);
+                    }
+                }
+            }, 10000, 4999);
 
             while (true) {
                 //Call the run method for mcpReceive
@@ -76,7 +68,8 @@ public class CCP {
                 //If a message has been received on the MCP port
                 if (mcpReceive.hasReceivedMessage()) {
                     //If the message was intended for a CCP and in particular our CCP
-                    if (mcpReceive.getIntendedClientID().equals(Receive.client_id) && mcpReceive.getIntendedClientType().equals(Receive.client_type)) {
+                    // mcpReceive.getIntendedClientID().equals(Receive.client_id) && mcpReceive.getIntendedClientType().equals(Receive.client_type)
+                    if (true) {
                         //Message variable is what is going to be sent depending on the received message
                         String message = null;
                         //Variable to check the destination of the message
@@ -126,8 +119,6 @@ public class CCP {
                             else{
                                 sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
                             }
-                            
-                            mcpReceive.setReceivedMessage(false);
                         }
                     }
                     //Set the flag to false
@@ -154,6 +145,7 @@ public class CCP {
                             //If the message received is STAT then set the ESPConnection variable to true and do error checking
                             if(espReceive.getMessage().equals("STAT")){
                                 setESPConnection(true);
+                                setESP_ACK(true);
                                 //If the actual light colour on the BR isn't the intended light colour then resend the previous EXEC message to the ESP
                                 if(espReceive.getActualLightColour() != espReceive.getActualLightColour()){
                                     message = sendESP.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
@@ -174,8 +166,6 @@ public class CCP {
                             else{
                                 sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
                             }
-                            
-                            espReceive.setReceivedMessage(false);
                         }
                     }
                     //Set the flag to false
@@ -194,7 +184,23 @@ public class CCP {
         mcpConnection = state;
     }
 
+    public static Boolean getMCPConnection(){
+        return mcpConnection;
+    }
+
     public static void setESPConnection(boolean state){
         espConnection = state;
+    }
+
+    public static Boolean getECPConnection(){
+        return espConnection;
+    }
+
+    public static void setESP_ACK(boolean state){
+        espStatAck = state;
+    }
+
+    public static Boolean getESP_ACK(){
+        return espStatAck;
     }
 }

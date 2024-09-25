@@ -8,7 +8,7 @@ public class Receive implements Runnable {
     //Variables for Receive class that are shared by the MCP and ESP
     private DatagramSocket socket;
     public static String client_type = "ccp";
-    public static String client_id = "BRXX";
+    public static String client_id = "BR24";
     private String intended_client_type;
     private String intended_client_id;
     private String message;
