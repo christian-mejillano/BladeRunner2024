@@ -1,7 +1,5 @@
 import java.net.*;
-import java.util.Date;
 import org.json.simple.*;
-import org.json.simple.parser.*;
 
 public class ReceiveMCP extends Receive{
     //Unique information sent by the MCP

@@ -58,7 +58,7 @@ public class Send {
     @SuppressWarnings("unchecked")
     public String send_esp_stat(){
         JSONObject message = messageTemplate();
-        message.put("message", "STAT");
+        message.put("message", "HEARTBEAT");
         return message.toString();
     }
 
@@ -69,6 +69,15 @@ public class Send {
         message.put("message", "EXEC");
         message.put("action", action);
         message.put("light_colour", light_colour);
+        return message.toString();
+    }
+
+    //Create EXEC message to send to the ESP without lights
+    @SuppressWarnings("unchecked")
+    public String send_esp_exec(String action){
+        JSONObject message = messageTemplate();
+        message.put("message", "EXEC");
+        message.put("action", action);
         return message.toString();
     }
 
