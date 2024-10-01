@@ -75,6 +75,7 @@ void loop()
 {
   unsigned long currentMillis = millis();
 
+
   if (WiFi.status() != WL_CONNECTED)
   {
     Serial.println("WiFi lost, attempting to reconnect...");
@@ -82,6 +83,7 @@ void loop()
   }
 
   // Send heartbeat acknowledgment if heartbeat received
+  // Serial.println("checking for message");
   int packetSize = udp.parsePacket();
   // Serial.print(packetSize);
   if (packetSize != 0)
@@ -97,13 +99,16 @@ void loop()
 
     Serial.print("Received from server: ");
     String message = recieved["message"];
+    String action = recieved["action"];
     Serial.println(message);
-
-    if (message == "forward")
+    Serial.print("Action from server: ");
+    Serial.println(action);
+    lastHeartbeatReceived = currentMillis;
+    if (action == "START")
     {
       JsonDocument doc;
       doc["client_id"] = "ESP";
-      doc["message"] = "forward";
+      doc["message"] = "FORWARD";
       doc["timestamp"] = millis() / 1000;
       doc["status"] = "OK";
       doc["station_id"] = "ST01"; //??
@@ -116,16 +121,13 @@ void loop()
 
       Serial.println("Sent: " + reply);
       Serial.println("Sent message acknowledgment to Java program");
-
-      // Update last heartbeat received time
-      lastHeartbeatReceived = currentMillis;
       myServo.write(forwardAngle);
     }
-    if (message == "stop")
+    if (action == "STOP")
     {
       JsonDocument doc;
       doc["client_id"] = "ESP";
-      doc["message"] = "stopping";
+      doc["message"] = "STOPPING";
       doc["timestamp"] = millis() / 1000;
       doc["status"] = "OK";
       doc["station_id"] = "ST01"; //??
@@ -138,18 +140,15 @@ void loop()
 
       Serial.println("Sent: " + reply);
       Serial.println("Sent message acknowledgment to Java program");
-
-      // Update last heartbeat received time
-      lastHeartbeatReceived = currentMillis;
       myServo.write(stopAngle);
     }
 
-    if (message == "Heartbeat")
+    if (message == "HEARTBEAT")
     {
       // Send acknowledgment back to Java program
       JsonDocument doc;
       doc["client_id"] = "ESP";
-      doc["message"] = "status_update";
+      doc["message"] = "STAT";
       doc["timestamp"] = millis() / 1000;
       doc["status"] = "OK";
       doc["station_id"] = "ST01"; //??
@@ -162,28 +161,20 @@ void loop()
 
       Serial.println("Sent: " + reply);
       Serial.println("Sent heartbeat acknowledgment to Java program");
-
-      // Update last heartbeat received time
-      lastHeartbeatReceived = currentMillis;
     }
+    udp.flush();
   }
 
   // Check for heartbeat timeout
   if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
   {
     Serial.println("Heartbeat lost! Connection to Java program is down.");
-    udp.flush();
+   
     // Implement reconnection logic or alerts if needed
     lastHeartbeatReceived = currentMillis; // Reset to avoid continuous alerts
-  }
-
-  // Send heartbeat to Java program every 2 seconds
-  if (currentMillis - previousMillis >= heartbeatInterval)
-  {
-    previousMillis = currentMillis;
-    JsonDocument doc;
+        JsonDocument doc;
     doc["client_id"] = "ESP";
-    doc["message"] = "Requesting heartbeat";
+    doc["message"] = "REQ_HEARTBEAT";
     doc["timestamp"] = millis() / 1000;
     doc["status"] = "OK";
     doc["station_id"] = "ST01"; //??
@@ -195,9 +186,30 @@ void loop()
     udp.endPacket();
 
     Serial.println("Sent: " + beat);
-    Serial.println("Sent heartbeat to Java program");
+    Serial.println("Sent check up heartbeat to Java program");
   }
 
+  // Send heartbeat to Java program every 2 seconds
+  // if (currentMillis - previousMillis >= heartbeatInterval)
+  // {
+  //   previousMillis = currentMillis;
+    // JsonDocument doc;
+    // doc["client_id"] = "ESP";
+    // doc["message"] = "REQ_HEARTBEAT";
+    // doc["timestamp"] = millis() / 1000;
+    // doc["status"] = "OK";
+    // doc["station_id"] = "ST01"; //??
+    // doc["action"] = "STAT";
+    // String beat;
+    // serializeJson(doc, beat);
+    // udp.beginPacket(udpAddress, udpPort);
+    // udp.write((const uint8_t *)beat.c_str(), beat.length());
+    // udp.endPacket();
+
+    // Serial.println("Sent: " + beat);
+    // Serial.println("Sent heartbeat to Java program");
+  // }
+
   // Wait before next iteration
-  // delay(10);
+  delay(10);
 }
