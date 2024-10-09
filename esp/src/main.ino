@@ -1,3 +1,10 @@
+/*
+CURRENT ISSUES/NEEDS TESTING:
+- How is the photovoltaic sensor being read? Analog or Digital?
+- How is the motor handling the change in direction? Is a increased delay required?
+- Is the 10ms at the end of loop() required?
+ */
+
 #include <WiFi.h>
 #include <WiFiUDP.h>
 #include <ArduinoJson.h>
@@ -40,6 +47,12 @@ const long heartbeatInterval = 500; // 2 seconds
 unsigned long lastHeartbeatReceived = 0;
 const long heartbeatTimeout = 1000; // 5 seconds timeout
 unsigned long currentMillis = 0;
+
+// collision detection
+const int collisionThreshold = 20;
+const long collisionDetectionTime = 500;
+unsigned long frontCollisionStartTime = 0;
+unsigned long backCollisionStartTime = 0;
 
 // PINNING
 
@@ -140,6 +153,9 @@ void loop()
   // message recieving
   recieve();
 
+  // collision detection
+  collisionDetection();
+
   // processing movement
   processMovement();
   processLighting();
@@ -154,6 +170,60 @@ void loop()
 
   // Wait before next iteration
   delay(10);
+}
+
+void connect()
+{
+  boolean ACKED = false;
+  if (!ACKED)
+  {
+    // sending connection
+    JsonDocument doc;
+    doc["client_type"] = "CCP";
+    doc["message"] = "CCIN";
+    doc["client_id"] = br;
+    String start;
+    serializeJson(doc, start);
+    udp.beginPacket(udpAddress, udpPort);
+    udp.write((const uint8_t *)start.c_str(), start.length());
+    udp.endPacket();
+
+    Serial.println("Sent: " + start);
+    Serial.println("Sent check up heartbeat to Java program");
+
+    // recieving packet
+    int packetSize = udp.parsePacket();
+    JsonDocument recieved;
+    char incomingPacket[255];
+    int len = udp.read(incomingPacket, 255);
+
+    if (len > 0)
+    {
+      incomingPacket[len] = '\0';
+    }
+    deserializeJson(recieved, incomingPacket);
+
+    // processing packet
+    if (recieved["message"] == "AKIN")
+    {
+      ACKED = true;
+      SEQ_NUM = recieved["sequence"];
+      JsonDocument doc;
+      doc["client_type"] = "CCP";
+      doc["message"] = "AKIN";
+      doc["client_id"] = br;
+      doc["sequence"] = SEQ_NUM;
+      String start;
+      serializeJson(doc, start);
+      udp.beginPacket(udpAddress, udpPort);
+      udp.write((const uint8_t *)start.c_str(), start.length());
+      udp.endPacket();
+
+      Serial.println("Sent: " + start);
+      Serial.println("Sent 3rd handshake to Java program");
+    }
+    delay(10);
+  }
 }
 
 void recieve()
@@ -284,23 +354,46 @@ void recieve()
 
 void processMovement()
 {
+  int photoValue = digitalRead(PHOTO_PIN);
   if (currStat != targetStat)
   {
+    digitalWrite(MOTOR_PIN_1, LOW);
+    digitalWrite(MOTOR_PIN_2, LOW);
     if (targetStat == "STOPPED")
     {
-
+      analogWrite(MOTOR_SPEED_PIN, 0);
+      digitalWrite(MOTOR_PIN_1, LOW);
+      digitalWrite(MOTOR_PIN_2, LOW);
+      currStat = "STOPPED";
     }
     else if (targetStat == "STATION")
     {
-
-    }
-    else if (targetStat == "FAST")
-    {
-
+      analogWrite(MOTOR_SPEED_PIN, 50);
+      digitalWrite(MOTOR_PIN_1, HIGH);
+      digitalWrite(MOTOR_PIN_2, LOW);
+      if (photoValue == HIGH)
+      {
+        targetStat = "STOPPED";
+        targetDoor = "CLOSED";
+      }
     }
     else if (targetStat == "RSTATION")
     {
-
+      analogWrite(MOTOR_SPEED_PIN, 50);
+      digitalWrite(MOTOR_PIN_1, LOW);
+      digitalWrite(MOTOR_PIN_2, HIGH);
+      if (photoValue == HIGH)
+      {
+        targetStat = "STOPPED";
+        targetDoor = "CLOSED";
+      }
+    }
+    else if (targetStat == "FAST")
+    {
+      analogWrite(MOTOR_SPEED_PIN, 255);
+      digitalWrite(MOTOR_PIN_1, HIGH);
+      digitalWrite(MOTOR_PIN_2, LOW);
+      currStat = "FAST";
     }
   }
 }
@@ -311,27 +404,33 @@ void processLighting()
   {
     if (targetColour == "YELLOW")
     {
-
+      digitalWrite(YELLOW_PIN, HIGH);
+      digitalWrite(RED_PIN, LOW);
+      digitalWrite(GREEN_PIN, LOW);
     }
     else if (targetColour == "GREEN")
     {
-
+      digitalWrite(YELLOW_PIN, HIGH);
+      digitalWrite(RED_PIN, LOW);
+      digitalWrite(GREEN_PIN, LOW);
     }
     else if (targetColour == "FLASHING_RED")
     {
-
+      digitalWrite(RED_PIN, (millis() / 500) % 2 == 0 ? HIGH : LOW);
     }
     else if (targetColour == "FLASHING_YELLOW")
     {
-
+      digitalWrite(YELLOW_PIN, (millis() / 500) % 2 == 0 ? HIGH : LOW);
     }
     else if (targetColour == "FLASHING_GREEN")
     {
-
+      digitalWrite(GREEN_PIN, (millis() / 500) % 2 == 0 ? HIGH : LOW);
     }
     else if (targetColour == "KANYEWEST")
     {
-
+      digitalWrite(RED_PIN, (millis() / 500) % 2 == 0 ? HIGH : LOW);
+      digitalWrite(YELLOW_PIN, (millis() / 500) % 2 == 0 ? HIGH : LOW);
+      digitalWrite(GREEN_PIN, (millis() / 500) % 2 == 0 ? HIGH : LOW);
     }
   }
 }
@@ -342,65 +441,77 @@ void processDoor()
   {
     if (targetDoor == "OPENED")
     {
-
+      myServo.write(90);
+      currDoor = "OPENED";
     }
     else if (targetDoor == "CLOSED")
     {
-      
+      myServo.write(0);
+      currDoor = "CLOSED";
     }
   }
 }
 
-void connect()
+void collisionDetection()
 {
-  boolean ACKED = false;
-  if (!ACKED)
+  long frontDistance = getDistance(FRONT_TRIG_PIN, FRONT_ECHO_PIN);
+  long backDistance = getDistance(BACK_TRIG_PIN, BACK_ECHO_PIN);
+
+  // collision for the front sensor
+  if (frontDistance <= collisionThreshold || backDistance <= collisionThreshold)
   {
-    // sending connection
-    JsonDocument doc;
-    doc["client_type"] = "CCP";
-    doc["message"] = "CCIN";
-    doc["client_id"] = br;
-    String start;
-    serializeJson(doc, start);
-    udp.beginPacket(udpAddress, udpPort);
-    udp.write((const uint8_t *)start.c_str(), start.length());
-    udp.endPacket();
-
-    Serial.println("Sent: " + start);
-    Serial.println("Sent check up heartbeat to Java program");
-
-    // recieving packet
-    int packetSize = udp.parsePacket();
-    JsonDocument recieved;
-    char incomingPacket[255];
-    int len = udp.read(incomingPacket, 255);
-
-    if (len > 0)
+    if (frontCollisionStartTime == 0)
     {
-      incomingPacket[len] = '\0';
+      frontCollisionStartTime = millis();
     }
-    deserializeJson(recieved, incomingPacket);
-
-    // processing packet
-    if (recieved["message"] == "AKIN")
+    else
     {
-      ACKED = true;
-      SEQ_NUM = recieved["sequence"];
-      JsonDocument doc;
-      doc["client_type"] = "CCP";
-      doc["message"] = "AKIN";
-      doc["client_id"] = br;
-      doc["sequence"] = SEQ_NUM;
-      String start;
-      serializeJson(doc, start);
-      udp.beginPacket(udpAddress, udpPort);
-      udp.write((const uint8_t *)start.c_str(), start.length());
-      udp.endPacket();
-
-      Serial.println("Sent: " + start);
-      Serial.println("Sent 3rd handshake to Java program");
+      if (millis() - frontCollisionStartTime > collisionDetectionTime)
+      {
+        Serial.println("Back Collision detected! Stopping motors.");
+        targetStat = "STOPPED";
+      }
     }
-    delay(10);
   }
+  else
+  {
+    frontCollisionStartTime = 0;
+  }
+
+  // collision for the back sensor
+  if (backDistance <= collisionThreshold)
+  {
+    if (backCollisionStartTime == 0)
+    {
+      backCollisionStartTime = millis();
+    }
+    else
+    {
+      if (millis() - backCollisionStartTime > collisionDetectionTime)
+      {
+        Serial.println("Back Collision detected! Stopping motors.");
+        targetStat = "STOPPED";
+      }
+    }
+  }
+  else
+  {
+    backCollisionStartTime = 0;
+  }
+}
+
+long getDistance(int trigPin, int echoPin)
+{
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Measure the duration of the echo pulse
+  long duration = pulseIn(echoPin, HIGH);
+
+  // Calculate the distance in centimeters
+  long distance = duration * 0.034 / 2;
+  return distance;
 }
