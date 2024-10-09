@@ -5,37 +5,90 @@
 
 Servo myServo;
 
-// WiFi network name and password
-const char *ssid = "ENGG2K3K";
+// TO CHANGE PER BLADERUNNER
+const String br = "BR24";
+const int udpPort = 3024;
+const char *udpAddress = "10.20.30.124"; // Java program IP address
 
 // IP address and port to send UDP data to (Java program)
-const char *udpAddress = "10.20.30.124"; // Java program IP address
-const int udpPort = 3024;
 IPAddress local_IP(10, 20, 30, 1);
 IPAddress gateway(10, 20, 30, 1);
 IPAddress subnet(255, 255, 255, 0);
 
+// Bladerunner status
+String currStat = "STOPPPED";
+String currColour = "RED";
+String currDoor = "CLOSED";
+
+// target status
+String targetStat = currStat;
+String targetColour = currColour;
+String targetDoor = currDoor;
+
+// connection stream
+int SEQ_NUM = 0;
+
+// WiFi network name and password
+const char *ssid = "ENGG2K3K";
+
 // Create UDP instance
 WiFiUDP udp;
 
+// heartbeat timmer
 unsigned long previousMillis = 0;
-const long heartbeatInterval = 2000; // 2 seconds
+const long heartbeatInterval = 500; // 2 seconds
 unsigned long lastHeartbeatReceived = 0;
-const long heartbeatTimeout = 5000; // 5 seconds timeout
+const long heartbeatTimeout = 1000; // 5 seconds timeout
+unsigned long currentMillis = 0;
 
-// pinning
-const int motor1 = 16;
-const int motor2 = 17;
-const int servoPin = 15;
+// PINNING
 
-const int forwardAngle = 180;  // Forward (full movement)
-const int stopAngle = 90; 
+// motor NOT FINALISED
+const int MOTOR_PIN_1 = 19;
+const int MOTOR_PIN_2 = 21;
+const int MOTOR_SPEED_PIN = 27;
+
+// servo
+const int SERVO_PIN = 5;
+
+// ultrasonic sensor 1
+const int FRONT_TRIG_PIN = 25;
+const int FRONT_ECHO_PIN = 26;
+
+// ultrasonic sensor 2
+const int BACK_TRIG_PIN = 32;
+const int BACK_ECHO_PIN = 33;
+
+// phototransistor
+const int PHOTO_PIN = 18;
+
+// lighting
+const int RED_PIN = 4;
+const int YELLOW_PIN = 16;
+const int GREEN_PIN = 17;
 
 void setup()
 {
   Serial.begin(115200);
 
-    myServo.attach(servoPin);
+  // sensor pinning
+  myServo.attach(SERVO_PIN);
+  pinMode(FRONT_TRIG_PIN, OUTPUT);
+  pinMode(FRONT_ECHO_PIN, INPUT);
+  pinMode(BACK_TRIG_PIN, OUTPUT);
+  pinMode(BACK_ECHO_PIN, INPUT);
+  pinMode(PHOTO_PIN, INPUT_PULLUP);
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(YELLOW_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(MOTOR_PIN_1, OUTPUT);
+  pinMode(MOTOR_PIN_2, OUTPUT);
+  pinMode(MOTOR_SPEED_PIN, OUTPUT);
+
+  // stop motors and set status to stopped
+  // close doors and set doors to closed
+  // set led to red and currLED to red
+  analogWrite(MOTOR_SPEED_PIN, 0);
 
   // Connect to the WiFi network
   WiFi.config(local_IP, gateway, subnet);
@@ -47,6 +100,8 @@ void setup()
     delay(500);
     Serial.print(".");
   }
+
+  // debugging
   Serial.println("");
   Serial.print("Connected to ");
   Serial.println(ssid);
@@ -66,26 +121,44 @@ void setup()
   }
   udp.flush();
   Serial.println("End of setup");
-   myServo.write(forwardAngle);
-   delay(1000);
-   myServo.write(stopAngle);
 
+  // start communication
+  connect();
 }
+
 void loop()
 {
-  unsigned long currentMillis = millis();
+  currentMillis = millis();
 
-
+  // Continual wifi connection check
   if (WiFi.status() != WL_CONNECTED)
   {
     Serial.println("WiFi lost, attempting to reconnect...");
     WiFi.reconnect();
   }
 
-  // Send heartbeat acknowledgment if heartbeat received
-  // Serial.println("checking for message");
+  // message recieving
+  recieve();
+
+  // processing movement
+  processMovement();
+  processLighting();
+  processDoor();
+
+  // Check for heartbeat timeout
+  if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
+  {
+    Serial.println("Heartbeat lost! Connection to Java program is down.");
+    connect();
+  }
+
+  // Wait before next iteration
+  delay(10);
+}
+
+void recieve()
+{
   int packetSize = udp.parsePacket();
-  // Serial.print(packetSize);
   if (packetSize != 0)
   {
     JsonDocument recieved;
@@ -97,53 +170,96 @@ void loop()
     }
     deserializeJson(recieved, incomingPacket);
 
-    Serial.print("Received from server: ");
     String message = recieved["message"];
     String action = recieved["action"];
-    Serial.println(message);
-    Serial.print("Action from server: ");
-    Serial.println(action);
     lastHeartbeatReceived = currentMillis;
-    if (action == "START")
+    SEQ_NUM = recieved["sequence"];
+
+    // debugging
+    {
+      Serial.print("Received from server: ");
+      Serial.println(message);
+      Serial.print("Action from server: ");
+      Serial.println(action);
+    }
+
+    if (message == "RQSTAT")
     {
       JsonDocument doc;
-      doc["client_id"] = "ESP";
-      doc["message"] = "FORWARD";
-      doc["timestamp"] = millis() / 1000;
-      doc["status"] = "OK";
-      doc["station_id"] = "ST01"; //??
-      doc["action"] = "move";
+      doc["client_type"] = "CCP";
+      doc["message"] = "STAT";
+      doc["client_id"] = BR;
+      doc["status"] = currStat;
+      doc["light_color"] = currColour;
+      doc["door_status"] = currDoor;
       String reply;
       serializeJson(doc, reply);
       udp.beginPacket(udpAddress, udpPort);
       udp.write((const uint8_t *)reply.c_str(), reply.length());
       udp.endPacket();
-
-      Serial.println("Sent: " + reply);
-      Serial.println("Sent message acknowledgment to Java program");
-      myServo.write(forwardAngle);
     }
-    if (action == "STOP")
+    else if (message == "EXEC")
     {
+      if (action == "STOPC")
+      {
+        targetStat = "STOPPED";
+        targetDoor = "CLOSED";
+        targetColour = "FLASHING_RED";
+      }
+      else if (action == "STOPO")
+      {
+        targetStat = "STOPPED";
+        targetDoor = "OPENED";
+        targetColour = "FLASHING_GREEN";
+      }
+      else if (action == "FSLOWC")
+      {
+        // BR should move forward slowly and stop after
+        // it has aligned itself with the IR photodiode
+        // at a checkpoint or station. BR doors are to
+        // remain closed. If the BR is already aligned
+        // with an IR photodiode, the BR should not move.
+        targetStat = "STATION";
+        targetDoor = "CLOSED";
+        targetColour = "YELLOW";
+      }
+      else if (action == "FFASTC")
+      {
+        // move forward fast and door closed
+        targetStat = "FAST";
+        targetDoor = "CLOSED";
+        targetColour = "GREEN";
+      }
+      else if (action == "RSLOWC")
+      {
+        // BR should move backwards slowly and stop after
+        //  it has aligned itself with the IR photodiode
+        // at a checkpoint or station. BR doors are to
+        // remain closed. If the BR is already aligned with
+        //  an IR photodiode, the BR should not move.
+        targetStat = "RSTATION";
+        targetDoor = "CLOSED";
+        targetColour = "FLASHING_YELLOW";
+      }
+      else if (action == "DISCONNECT")
+      {
+        // BR status LED should flash at a 2 Hz rate to
+        // indicate that it is to be removed from the track.
+        targetStat = "STOPPED";
+        targetDoor = "CLOSED";
+        targetColour = "KANYEWEST";
+      }
       JsonDocument doc;
-      doc["client_id"] = "ESP";
-      doc["message"] = "STOPPING";
-      doc["timestamp"] = millis() / 1000;
-      doc["status"] = "OK";
-      doc["station_id"] = "ST01"; //??
-      doc["action"] = "move";
+      doc["client_type"] = "CCP";
+      doc["message"] = "AKEX";
+      doc["client_id"] = BR;
+      doc["sequence"] = SEQ_NUM;
       String reply;
       serializeJson(doc, reply);
       udp.beginPacket(udpAddress, udpPort);
       udp.write((const uint8_t *)reply.c_str(), reply.length());
       udp.endPacket();
-
-      Serial.println("Sent: " + reply);
-      Serial.println("Sent message acknowledgment to Java program");
-      myServo.write(stopAngle);
     }
-
-    if (message == "HEARTBEAT")
     {
       // Send acknowledgment back to Java program
       JsonDocument doc;
@@ -164,52 +280,127 @@ void loop()
     }
     udp.flush();
   }
+}
 
-  // Check for heartbeat timeout
-  if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
+void processMovement()
+{
+  if (currStat != targetStat)
   {
-    Serial.println("Heartbeat lost! Connection to Java program is down.");
-   
-    // Implement reconnection logic or alerts if needed
-    lastHeartbeatReceived = currentMillis; // Reset to avoid continuous alerts
-        JsonDocument doc;
-    doc["client_id"] = "ESP";
-    doc["message"] = "REQ_HEARTBEAT";
-    doc["timestamp"] = millis() / 1000;
-    doc["status"] = "OK";
-    doc["station_id"] = "ST01"; //??
-    doc["action"] = "STAT";
-    String beat;
-    serializeJson(doc, beat);
+    if (targetStat == "STOPPED")
+    {
+
+    }
+    else if (targetStat == "STATION")
+    {
+
+    }
+    else if (targetStat == "FAST")
+    {
+
+    }
+    else if (targetStat == "RSTATION")
+    {
+
+    }
+  }
+}
+
+void processLighting()
+{
+  if (currColour != targetColour)
+  {
+    if (targetColour == "YELLOW")
+    {
+
+    }
+    else if (targetColour == "GREEN")
+    {
+
+    }
+    else if (targetColour == "FLASHING_RED")
+    {
+
+    }
+    else if (targetColour == "FLASHING_YELLOW")
+    {
+
+    }
+    else if (targetColour == "FLASHING_GREEN")
+    {
+
+    }
+    else if (targetColour == "KANYEWEST")
+    {
+
+    }
+  }
+}
+
+void processDoor()
+{
+  if (currDoor != targetDoor)
+  {
+    if (targetDoor == "OPENED")
+    {
+
+    }
+    else if (targetDoor == "CLOSED")
+    {
+      
+    }
+  }
+}
+
+void connect()
+{
+  boolean ACKED = false;
+  if (!ACKED)
+  {
+    // sending connection
+    JsonDocument doc;
+    doc["client_type"] = "CCP";
+    doc["message"] = "CCIN";
+    doc["client_id"] = br;
+    String start;
+    serializeJson(doc, start);
     udp.beginPacket(udpAddress, udpPort);
-    udp.write((const uint8_t *)beat.c_str(), beat.length());
+    udp.write((const uint8_t *)start.c_str(), start.length());
     udp.endPacket();
 
-    Serial.println("Sent: " + beat);
+    Serial.println("Sent: " + start);
     Serial.println("Sent check up heartbeat to Java program");
+
+    // recieving packet
+    int packetSize = udp.parsePacket();
+    JsonDocument recieved;
+    char incomingPacket[255];
+    int len = udp.read(incomingPacket, 255);
+
+    if (len > 0)
+    {
+      incomingPacket[len] = '\0';
+    }
+    deserializeJson(recieved, incomingPacket);
+
+    // processing packet
+    if (recieved["message"] == "AKIN")
+    {
+      ACKED = true;
+      SEQ_NUM = recieved["sequence"];
+      JsonDocument doc;
+      doc["client_type"] = "CCP";
+      doc["message"] = "AKIN";
+      doc["client_id"] = br;
+      doc["sequence"] = SEQ_NUM;
+      String start;
+      serializeJson(doc, start);
+      udp.beginPacket(udpAddress, udpPort);
+      udp.write((const uint8_t *)start.c_str(), start.length());
+      udp.endPacket();
+
+      Serial.println("Sent: " + start);
+      Serial.println("Sent 3rd handshake to Java program");
+    }
+    delay(10);
   }
-
-  // Send heartbeat to Java program every 2 seconds
-  // if (currentMillis - previousMillis >= heartbeatInterval)
-  // {
-  //   previousMillis = currentMillis;
-    // JsonDocument doc;
-    // doc["client_id"] = "ESP";
-    // doc["message"] = "REQ_HEARTBEAT";
-    // doc["timestamp"] = millis() / 1000;
-    // doc["status"] = "OK";
-    // doc["station_id"] = "ST01"; //??
-    // doc["action"] = "STAT";
-    // String beat;
-    // serializeJson(doc, beat);
-    // udp.beginPacket(udpAddress, udpPort);
-    // udp.write((const uint8_t *)beat.c_str(), beat.length());
-    // udp.endPacket();
-
-    // Serial.println("Sent: " + beat);
-    // Serial.println("Sent heartbeat to Java program");
-  // }
-
-  // Wait before next iteration
-  delay(10);
 }
