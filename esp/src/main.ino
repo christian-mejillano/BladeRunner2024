@@ -15,11 +15,11 @@ Servo myServo;
 // TO CHANGE PER BLADERUNNER
 const String br = "BR24";
 const int udpPort = 3024;
-const char *udpAddress = "10.20.30.124"; // Java program IP address
+const char *udpAddress = "10.20.30.140"; // Java program IP address
 
 // IP address and port to send UDP data to (Java program)
-IPAddress local_IP(10, 20, 30, 1);
-IPAddress gateway(10, 20, 30, 1);
+IPAddress local_IP(10, 20, 30, 124);
+IPAddress gateway(10, 20, 30, 250);
 IPAddress subnet(255, 255, 255, 0);
 
 // Bladerunner status
@@ -154,7 +154,7 @@ void loop()
   recieve();
 
   // collision detection
-  collisionDetection();
+  // collisionDetection();
 
   // processing movement
   processMovement();
@@ -169,7 +169,7 @@ void loop()
   }
 
   // Wait before next iteration
-  delay(10);
+  delay(100);
 }
 
 void connect()
@@ -253,7 +253,7 @@ void recieve()
       Serial.println(action);
     }
 
-    if (message == "RQSTAT")
+    if (message == "STRQ")
     {
       JsonDocument doc;
       doc["client_type"] = "CCP";
