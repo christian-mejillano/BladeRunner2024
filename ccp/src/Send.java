@@ -1,6 +1,5 @@
 import java.io.IOException;
 import java.net.*;
-import java.util.Date;
 import org.json.simple.*;
 
 public class Send {
@@ -28,6 +27,7 @@ public class Send {
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
         try{
             socket.send(packet);
+            System.out.println("Sending: " + jsonToSend);
         }
         catch(IOException e){
             System.out.println("There was an error with sending the message. Line 30 Send.java");
@@ -42,7 +42,6 @@ public class Send {
         JSONObject message = new JSONObject();
         message.put("client_type", Receive.client_type);
         message.put("client_id", Receive.client_id);
-        message.put("timestamp", new Date().getTime() / 1000);
         return message;
     }
 
@@ -51,42 +50,26 @@ public class Send {
     public String send_esp_akin(){
         JSONObject message = messageTemplate();
         message.put("message", "AKIN");
+        message.put("sequence", CCP.ESP_Sequence);
         return message.toString();
     }
 
-    //Create STAT message to send to the ESP
+    //Create Status Request Message to ESP
     @SuppressWarnings("unchecked")
-    public String send_esp_stat(){
+    public String send_esp_strq(){
         JSONObject message = messageTemplate();
-        message.put("message", "HEARTBEAT");
+        message.put("message", "STRQ");
+        message.put("sequence", CCP.ESP_Sequence);
         return message.toString();
     }
 
     //Create EXEC message to send to the ESP
     @SuppressWarnings("unchecked")
-    public String send_esp_exec(String light_colour, String action){
-        JSONObject message = messageTemplate();
-        message.put("message", "EXEC");
-        message.put("action", action);
-        message.put("light_colour", light_colour);
-        return message.toString();
-    }
-
-    //Create EXEC message to send to the ESP without lights
-    @SuppressWarnings("unchecked")
     public String send_esp_exec(String action){
         JSONObject message = messageTemplate();
         message.put("message", "EXEC");
         message.put("action", action);
-        return message.toString();
-    }
-
-    //Crate DOOR message to send to the ESP
-    @SuppressWarnings("unchecked")
-    public String send_esp_door(String action){
-        JSONObject message = messageTemplate();
-        message.put("message", "DOOR");
-        message.put("action", action);
+        message.put("sequence", CCP.ESP_Sequence);
         return message.toString();
     }
 
@@ -95,6 +78,7 @@ public class Send {
     public String send_mcp_ccin(){
         JSONObject message = messageTemplate();
         message.put("message", "CCIN");
+        message.put("sequence_number", CCP.MCP_Sequence);
         return message.toString();
     }
 
@@ -104,15 +88,16 @@ public class Send {
         JSONObject message = messageTemplate();
         message.put("message", "STAT");
         message.put("status", status);
+        message.put("sequence_number", CCP.MCP_Sequence);
         return message.toString();
     }
 
-    //Create STAN message to send to the MCP
+    //Create AKEX message to send to the MCP
     @SuppressWarnings("unchecked")
-    public String send_mcp_stan(String status, String station_id){
+    public String send_mcp_akex(){
         JSONObject message = messageTemplate();
-        message.put("message", "STAT");
-        message.put("status", status);
+        message.put("message", "AKEX");
+        message.put("sequence_number", CCP.MCP_Sequence);
         return message.toString();
     }
 }
