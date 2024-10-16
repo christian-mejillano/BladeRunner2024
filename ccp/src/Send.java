@@ -1,14 +1,18 @@
 import java.io.IOException;
 import java.net.*;
+import java.util.*;
 import org.json.simple.*;
 
 public class Send {
     //Variables for Send class
     private DatagramSocket socket;
+    public int sendingSequenceNumber;
 
     //Constructor
     public Send(DatagramSocket socket) {
         this.socket = socket;
+        Random random = new Random();
+        sendingSequenceNumber = random.nextInt(1000, 30000);
     }
 
     //Function to send the message given a receive object, ip address and port
@@ -50,7 +54,7 @@ public class Send {
     public String send_esp_akin(){
         JSONObject message = messageTemplate();
         message.put("message", "AKIN");
-        message.put("sequence", CCP.ESP_Sequence);
+        message.put("sequence", sendingSequenceNumber);
         return message.toString();
     }
 
@@ -59,7 +63,7 @@ public class Send {
     public String send_esp_strq(){
         JSONObject message = messageTemplate();
         message.put("message", "STRQ");
-        message.put("sequence", CCP.ESP_Sequence);
+        message.put("sequence", sendingSequenceNumber);
         return message.toString();
     }
 
@@ -69,7 +73,7 @@ public class Send {
         JSONObject message = messageTemplate();
         message.put("message", "EXEC");
         message.put("action", action);
-        message.put("sequence", CCP.ESP_Sequence);
+        message.put("sequence", sendingSequenceNumber);
         return message.toString();
     }
 
@@ -78,7 +82,7 @@ public class Send {
     public String send_mcp_ccin(){
         JSONObject message = messageTemplate();
         message.put("message", "CCIN");
-        message.put("sequence_number", CCP.MCP_Sequence);
+        message.put("sequence_number", sendingSequenceNumber);
         return message.toString();
     }
 
@@ -88,7 +92,7 @@ public class Send {
         JSONObject message = messageTemplate();
         message.put("message", "STAT");
         message.put("status", status);
-        message.put("sequence_number", CCP.MCP_Sequence);
+        message.put("sequence_number", sendingSequenceNumber);
         return message.toString();
     }
 
@@ -97,7 +101,7 @@ public class Send {
     public String send_mcp_akex(){
         JSONObject message = messageTemplate();
         message.put("message", "AKEX");
-        message.put("sequence_number", CCP.MCP_Sequence);
+        message.put("sequence_number", sendingSequenceNumber);
         return message.toString();
     }
 }
