@@ -1,19 +1,21 @@
 import java.net.*;
-import java.util.TimerTask;
-import java.util.Timer;
+import java.util.*;
 
 public class CCP {
     //Variables to be used for connection status checking
-    private static boolean espStatAck;
-    private static boolean mcpStatAck;
+    private static boolean espStatAck = false;
+    private static boolean mcpStatAck = false;
     //Variables for sending a message at set intervals. Hearbeat Variable is 2 seconds
     private static final long HEARTBEAT_INTERVAL = 2000;
     private static Timer heartbeatTimer;
     //10.20.30.11
-    private static final String MCP_IP_ADDRESS = "10.20.30.40";
-    private static final String ESP_IP_ADDRESS = "10.20.30.1";
+    private static final String MCP_IP_ADDRESS = "10.20.30.1";
+    private static final String ESP_IP_ADDRESS = "10.20.30.124";
     private static final int MCP_PORT = 2000;
     private static final int ESP32_PORT = 3024;
+    public static int MCP_Sequence = new Random().nextInt(1000, 30000);
+    public static int ESP_Sequence = new Random().nextInt(1000, 30000);
+    private static int MCP_Receive_Sequence;
 
     public static void main(String[] args) {
         try {
@@ -27,16 +29,40 @@ public class CCP {
             //Instanstiate Send Object and new Timer 
             Send sendMCP = new Send(mcpSocket);
             Send sendESP = new Send(espSocket);
-            heartbeatTimer = new Timer();
+            heartbeatTimer = new Timer();         
             
-            //Call the the function to setup all the timers
-            setupTimers(sendMCP, sendESP);
+            intialiseConnections(sendMCP, sendESP, mcpReceive, espReceive);
+
+            // Call the the function to setup all the timers
+            setupTimers(sendMCP, sendESP, mcpReceive, espReceive);
 
             while (true) {
                 //Call the two functions that will run the send and receive logic for ESP and MCP communication
                 mcpMessageLogic(sendMCP, sendESP, mcpReceive, espReceive);
                 espMessageLogic(sendMCP, sendESP, mcpReceive, espReceive);
             }
+
+            //Basic send test messages to ESP
+
+            // String message = sendESP.send_esp_exec("Start");
+            // sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
+
+            // Basic Send Testing
+
+            // Thread.sleep(5000);
+
+            // message = sendESP.send_esp_exec("Stop");
+            // sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
+
+            // Thread.sleep(5000);
+
+            // message = sendESP.send_esp_exec("Back");
+            // sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
+
+            // Thread.sleep(5000);
+
+            // message = sendESP.send_esp_exec("Stop");
+            // sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
         } 
 
         //In case there are any errors that haven't been addressed, print out the stack trace
@@ -45,7 +71,45 @@ public class CCP {
         }
     }
 
-    public static void setupTimers(Send sendMCP, Send sendESP){
+    public static void intialiseConnections(Send sendMCP, Send sendESP, ReceiveMCP mcpReceive, ReceiveESP espReceive){
+        //check if CCIN received from esp
+        //send AKIN
+        //check if akin/ccin
+        //set espStatAck to true
+        System.out.println("Checking for init");
+        while(!getESP_ACK()){
+            System.out.println("Checking for recieved");
+            espReceive.run();
+            if(espReceive.getMessage() != null){
+                System.out.println("here");
+                if(espReceive.getMessage().equals( "CCIN")){
+                    //Send CCIN to ESP 3 times before waiting for AKIN again
+                    for(int i = 0; i <= 3; i++){
+                        sendESP.sendMessage(sendESP.send_esp_akin(), ESP_IP_ADDRESS, ESP32_PORT);
+                        espReceive.run();
+                        if(espReceive.getMessage().equals("AKIN/ACK")){
+                            setESP_ACK(true);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        //Send CCIN to MCP
+        //check if ack received
+        //set mcpStatAck to true
+        while(!getMCP_ACK()){
+            
+            sendMCP.sendMessage(sendMCP.send_mcp_ccin(), ESP_IP_ADDRESS, ESP32_PORT);
+            mcpReceive.run();
+            if(mcpReceive.getMessage().equals("AKIN")){
+                setMCP_ACK(true);
+            }
+        } 
+    }
+
+    public static void setupTimers(Send sendMCP, Send sendESP, ReceiveMCP mcpReceive, ReceiveESP espReceive){
             //Runs every 2 seconds given the HEARTBEAT_INTERVAL variable
             //Sends STAT message to ESP and CCP every 2 seconds
             heartbeatTimer.schedule(new TimerTask() {
@@ -56,7 +120,7 @@ public class CCP {
                     sendMCP.sendMessage(message, MCP_IP_ADDRESS, MCP_PORT);
                     System.out.println("Sending MCP: " + message);
                     //Send a STAT message to the ESP
-                    message = sendESP.send_esp_stat();
+                    message = sendESP.send_esp_strq();
                     sendESP.sendMessage(message, ESP_IP_ADDRESS, ESP32_PORT);
                     System.out.println("Sending ESP: " + message);
                 }
@@ -67,6 +131,11 @@ public class CCP {
                 @Override
                 public void run() {
                     //If there is no connection with the ESP, then print it out
+                    if(!getESP_ACK() && !getMCP_ACK()){
+                        intialiseConnections(sendMCP, sendESP, mcpReceive, espReceive);
+                        return;
+                    }
+
                     if(!getESP_ACK()){
                         System.out.println("Lost connection with ESP");
                     }
@@ -125,17 +194,30 @@ public class CCP {
                             espReceive.setIntendedLightColour("GREEN");
                         }
                         //Create EXEC message
-                        message = sendESP.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
+                        message = sendESP.send_esp_exec(mcpReceive.getAction());
                     }
                     //If the command is door close or open then create the according message
                     else if(mcpReceive.getMessage().equals("DOPN")){
                         setMCP_ACK(true);
-                        message = sendESP.send_esp_door("OPEN");
+                        // message = sendESP.send_esp_door("OPEN");
                     }
 
                     else if(mcpReceive.getMessage().equals("DCLS")){
                         setMCP_ACK(true);
-                        message = sendESP.send_esp_door("CLOSE");
+                        // message = sendESP.send_esp_door("CLOSE");
+                    }
+
+
+//new mcp recieve logic
+                    if(mcpReceive.getMessage().equals("AKIN")){
+                        setMCP_ACK(true);
+                    } else if(mcpReceive.getMessage().equals("AKST")){
+                        // mcp acknowledged status
+                        sendMCP.send_mcp_stat("Filler string");
+                    } else if(mcpReceive.getMessage().equals("STRQ")){
+                        // status request
+                    } else if(mcpReceive.getMessage().equals("EXEC")){
+                        // execute command
                     }
                 }
 
@@ -169,7 +251,7 @@ public class CCP {
                 String destination = "MCP";
                 if(espReceive.getMessage() != null){
                     //If the message received is ACKS then set the ESP connection variable to true
-                    if(espReceive.getMessage().equals("ACKS")){
+                    if(espReceive.getMessage().equals("CCIN")){
                         setESP_ACK(true);
                     }
                     //If the message received is STAT then set the ESPConnection variable to true and do error checking
@@ -177,14 +259,9 @@ public class CCP {
                         setESP_ACK(true);
                         //If the actual light colour on the BR isn't the intended light colour then resend the previous EXEC message to the ESP
                         if(espReceive.getActualLightColour() != espReceive.getActualLightColour()){
-                            message = sendESP.send_esp_exec(espReceive.getIntendedLightColour(), mcpReceive.getAction());
+                            message = sendESP.send_esp_exec(mcpReceive.getAction());
                             destination = "ESP";
                         }
-                    }
-                    //If the message received is STAN then create a message for the MCP letting it know that the BR has arrived at a station
-                    if(espReceive.getMessage().equals("STAN")){
-                        setESP_ACK(true);
-                        message = sendESP.send_mcp_stan(espReceive.getStatus(), espReceive.getStationID());
                     }
                 }
                 

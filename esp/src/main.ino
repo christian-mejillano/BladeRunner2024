@@ -253,7 +253,7 @@ void recieve()
       Serial.println(action);
     }
 
-    if (message == "RQSTAT")
+    if (message == "STRQ")
     {
       JsonDocument doc;
       doc["client_type"] = "CCP";
