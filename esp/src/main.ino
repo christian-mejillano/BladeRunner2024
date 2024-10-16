@@ -490,6 +490,7 @@ void collisionDetection()
       if (millis() - backCollisionStartTime > collisionDetectionTime)
       {
         Serial.println("Back Collision detected! Stopping motors.");
+        //IMPORTANTchange to move faster
         targetStat = "STOPPED";
       }
     }
