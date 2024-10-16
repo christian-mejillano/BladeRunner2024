@@ -17,7 +17,6 @@ public class CCP {
     public static final int ESP32_PORT = 3024;
     public static int mcpSequence = new Random().nextInt(1000, 30000);
     public static int espSequence = new Random().nextInt(1000, 30000);
-    private static int mcpReceiveSequence;
 
     public static void main(String[] args) {
         try {
@@ -27,7 +26,10 @@ public class CCP {
 
             ThreadESP espThread = new ThreadESP(espSocket);
             ThreadMCP mcpThread = new ThreadMCP(mcpSocket);
-            TimerThread mainTimer = new TimerThread();      
+            TimerThread mainTimer = new TimerThread();
+            
+            SendToMCP mcpSender = new SendToMCP(mcpSocket);
+            SendToMCP espSender = new SendToMCP(espSocket);
 
             Thread mcpThreadObject = new Thread(mcpThread);
             Thread espThreadObject = new Thread(espThread);
@@ -50,36 +52,36 @@ public class CCP {
         //send AKIN
         //check if akin/ccin
         //set espStatAck to true
-        System.out.println("Checking for init");
-        while(!getESP_ACK()){
-            System.out.println("Checking for recieved");
-            if(espReceive.getMessage() != null){
-                System.out.println("here");
-                if(espReceive.getMessage().equals( "CCIN")){
-                    //Send CCIN to ESP 3 times before waiting for AKIN again
-                    for(int i = 0; i <= 3; i++){
-                        sendESP.sendMessage(sendESP.send_esp_akin(), ESP_IP_ADDRESS, ESP32_PORT);
-                        espReceive.run();
-                        if(espReceive.getMessage().equals("AKIN/ACK")){
-                            setESP_ACK(true);
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+        // System.out.println("Checking for init");
+        // while(!getESP_ACK()){
+        //     System.out.println("Checking for recieved");
+        //     if(espReceive.getMessage() != null){
+        //         System.out.println("here");
+        //         if(espReceive.getMessage().equals( "CCIN")){
+        //             //Send CCIN to ESP 3 times before waiting for AKIN again
+        //             for(int i = 0; i <= 3; i++){
+        //                 sendESP.sendMessage(sendESP.send_esp_akin(), ESP_IP_ADDRESS, ESP32_PORT);
+        //                 espReceive.run();
+        //                 if(espReceive.getMessage().equals("AKIN/ACK")){
+        //                     setESP_ACK(true);
+        //                     break;
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        //Send CCIN to MCP
-        //check if ack received
-        //set mcpStatAck to true
-        while(!getMCP_ACK()){
+        // //Send CCIN to MCP
+        // //check if ack received
+        // //set mcpStatAck to true
+        // while(!getMCP_ACK()){
             
-            sendMCP.sendMessage(sendMCP.send_mcp_ccin(), ESP_IP_ADDRESS, ESP32_PORT);
-            mcpReceive.run();
-            if(mcpReceive.getMessage().equals("AKIN")){
-                setMCP_ACK(true);
-            }
-        } 
+        //     sendMCP.sendMessage(sendMCP.send_mcp_ccin(), ESP_IP_ADDRESS, ESP32_PORT);
+        //     mcpReceive.run();
+        //     if(mcpReceive.getMessage().equals("AKIN")){
+        //         setMCP_ACK(true);
+        //     }
+        // } 
     }
 
     public static void mcpMessageLogic(ThreadMCP mcpThreadObject){
