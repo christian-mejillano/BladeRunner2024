@@ -4,7 +4,7 @@ import java.util.*;
 import org.json.simple.*;
 import org.json.simple.parser.*;
 
-public class ThreadMCP implements Runnable{
+public class ThreadMCP extends Thread{
     private DatagramSocket socket;
     public boolean hasReceivedMessage;
 
@@ -49,9 +49,11 @@ public class ThreadMCP implements Runnable{
                     hasReceivedMessage = true;
                     messageJSON = stringToJSON(messageInSocket);
 
+                    //Keep track of last 5 messages sent. If length is 5 remove the last (oldest) JSONObject in the ArrayList
                     if(lastFiveMessages.size() == 5){
                         lastFiveMessages.remove(4);
                     }
+                    //Add messageJSON to start of the ArrayList
                     lastFiveMessages.add(0, messageJSON);
 
                     System.out.println("Received: " + messageInSocket);
@@ -84,6 +86,7 @@ public class ThreadMCP implements Runnable{
         return jsonMessage;
     }
 
+    //Given a key, either return its value from jsonMessage or null if it doesn't exist
     public String getValueFromMessage(String key){
         if(messageJSON != null && (String) messageJSON.get(key) != null){
             return (String) messageJSON.get(key);

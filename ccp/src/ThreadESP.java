@@ -3,15 +3,20 @@ import java.net.*;
 import org.json.simple.*;
 import org.json.simple.parser.*;
 
-public class ThreadESP implements Runnable{
+public class ThreadESP extends Thread{
     private DatagramSocket socket;
 
     public boolean hasReceivedMessage;
     public JSONObject messageJSON; 
+    public String expectedStatus;
+    public String actualStatus;
 
     public ThreadESP(DatagramSocket socket){
         this.socket = socket;
         this.hasReceivedMessage = false;
+        //Should be STOPC by default when starting
+        this.expectedStatus = "STOPC";
+        this.actualStatus = "STOPC";
     }
 
     @Override
@@ -39,8 +44,7 @@ public class ThreadESP implements Runnable{
                 for(int i = 0; i <= messageInSocket.getBytes().length - 1; i++){
                     messageByteSum += messageInSocket.getBytes()[i];
                 }
-    
-                //Set flag to true
+                
                 if(messageInSocket != null && messageByteSum != 0){
                     hasReceivedMessage = true;
                     messageJSON = stringToJSON(messageInSocket);
@@ -75,6 +79,7 @@ public class ThreadESP implements Runnable{
         return jsonMessage;
     }
 
+    //Given a key, either return its value from jsonMessage or null if it doesn't exist
     public String getValueFromMessage(String key){
         if(messageJSON != null && (String) messageJSON.get(key) != null){
             return (String) messageJSON.get(key);

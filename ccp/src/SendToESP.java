@@ -9,8 +9,8 @@ public class SendToESP {
     public int sendingSequenceNumber;
     public static String clientType = "ccp";
     public static String clientID = "BR24";
-    public String ipAddress = "";
-    public int port = 0;
+    public String ipAddress = CCP.ESP_IP_ADDRESS;
+    public int port = CCP.ESP32_PORT;
 
     //Constructor
     public SendToESP(DatagramSocket socket) {
@@ -19,8 +19,7 @@ public class SendToESP {
         sendingSequenceNumber = random.nextInt(1000, 30000);
     }
 
-    //Function to send the message given a receive object, ip address and port
-    //The receive parameter will need to change to a JSON object as right now this is just forwarding whatever is being received
+    //Function to send the message given a String (should be JSON)
     public void sendMessage(String jsonToSend){
         //Create a new packet and send it to the given ip address and port
         byte[] buffer = jsonToSend.getBytes();
@@ -34,8 +33,10 @@ public class SendToESP {
         }
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
         try{
+            //Send packet
             socket.send(packet);
-            System.out.println("Sending: " + jsonToSend);
+            System.out.println("Sending to ESP: " + jsonToSend);
+            //Increment the sequence number
             sendingSequenceNumber++;
         }
         catch(IOException e){
@@ -43,42 +44,40 @@ public class SendToESP {
         }
     }
 
-        //Create a message template (just all the values that are common across all message)
+    //Create a message template (just all the values that are common across all message)
     //All other message creation methods in this class call this method since it contains variables that don't change such as
-    //clientType, clientID and timestamp
+    //clientType, clientID and sequence number
     @SuppressWarnings("unchecked")
     private JSONObject messageTemplate(){
         JSONObject message = new JSONObject();
         message.put("client_type", clientType);
         message.put("client_id", clientID);
+        message.put("sequence", sendingSequenceNumber);
         return message;
     }
 
-    //Create AKIN message to send to the ESP
+    //Send AKIN to ESP
     @SuppressWarnings("unchecked")
     public void send_esp_akin(){
         JSONObject message = messageTemplate();
         message.put("message", "AKIN");
-        message.put("sequence", sendingSequenceNumber);
         sendMessage(message.toString());
     }
 
-    //Create Status Request Message to ESP
+    //Send STRQ to ESP
     @SuppressWarnings("unchecked")
     public void send_esp_strq(){
         JSONObject message = messageTemplate();
         message.put("message", "STRQ");
-        message.put("sequence", sendingSequenceNumber);
         sendMessage(message.toString());
     }
 
-    //Create EXEC message to send to the ESP
+    //Send EXEC to ESP
     @SuppressWarnings("unchecked")
     public void send_esp_exec(String action){
         JSONObject message = messageTemplate();
         message.put("message", "EXEC");
         message.put("action", action);
-        message.put("sequence", sendingSequenceNumber);
         sendMessage(message.toString());
     }
 }

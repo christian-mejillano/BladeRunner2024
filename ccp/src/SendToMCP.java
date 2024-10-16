@@ -9,8 +9,8 @@ public class SendToMCP {
     public int sendingSequenceNumber;
     public static String clientType = "ccp";
     public static String clientID = "BR24";
-    public String ipAddress = "";
-    public int port = 0;
+    public String ipAddress = CCP.MCP_IP_ADDRESS;
+    public int port = CCP.MCP_PORT;
 
     //Constructor
     public SendToMCP(DatagramSocket socket) {
@@ -19,8 +19,7 @@ public class SendToMCP {
         sendingSequenceNumber = random.nextInt(1000, 30000);
     }
 
-    //Function to send the message given a receive object, ip address and port
-    //The receive parameter will need to change to a JSON object as right now this is just forwarding whatever is being received
+    //Function to send the message given a String (should be JSON)
     public void sendMessage(String jsonToSend){
         //Create a new packet and send it to the given ip address and port
         byte[] buffer = jsonToSend.getBytes();
@@ -34,8 +33,10 @@ public class SendToMCP {
         }
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
         try{
+            //Send packet
             socket.send(packet);
-            System.out.println("Sending: " + jsonToSend);
+            System.out.println("Sending to MCP: " + jsonToSend);
+            //Increment the sequence number
             sendingSequenceNumber++;
         }
         catch(IOException e){
@@ -46,40 +47,47 @@ public class SendToMCP {
 
     //Create a message template (just all the values that are common across all message)
     //All other message creation methods in this class call this method since it contains variables that don't change such as
-    //client_type, client_id and timestamp
+    //client_type, client_id and sequence number
     @SuppressWarnings("unchecked")
     private JSONObject messageTemplate(){
         JSONObject message = new JSONObject();
         message.put("client_type", clientType);
         message.put("client_id", clientID);
+        message.put("client_id", clientID);
+        message.put("sequence_number", sendingSequenceNumber);
         return message;
     }
 
-    //Create CCIN message to send to the MCP
+    //Send CCIN to ESP
     @SuppressWarnings("unchecked")
     public void send_mcp_ccin(){
         JSONObject message = messageTemplate();
         message.put("message", "CCIN");
-        message.put("sequence_number", sendingSequenceNumber);
         sendMessage(message.toString());
     }
 
-    //Create STAT message to send to the MCP
+    //Send STAT to MCP
     @SuppressWarnings("unchecked")
     public void send_mcp_stat(String status){
         JSONObject message = messageTemplate();
         message.put("message", "STAT");
         message.put("status", status);
-        message.put("sequence_number", sendingSequenceNumber);
         sendMessage(message.toString());
     }
 
-    //Create AKEX message to send to the MCP
+    //Send AKEX to MCP
     @SuppressWarnings("unchecked")
     public void send_mcp_akex(){
         JSONObject message = messageTemplate();
         message.put("message", "AKEX");
-        message.put("sequence_number", sendingSequenceNumber);
+        sendMessage(message.toString());
+    }
+
+    //Send NOIP to MCP
+    @SuppressWarnings("unchecked")
+    public void send_mcp_noip(){
+        JSONObject message = messageTemplate();
+        message.put("message", "NOIP");
         sendMessage(message.toString());
     }
 }
