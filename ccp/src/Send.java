@@ -7,6 +7,8 @@ public class Send {
     //Variables for Send class
     private DatagramSocket socket;
     public int sendingSequenceNumber;
+    public static String client_type = "ccp";
+    public static String client_id = "BR24";
 
     //Constructor
     public Send(DatagramSocket socket) {
@@ -32,6 +34,7 @@ public class Send {
         try{
             socket.send(packet);
             System.out.println("Sending: " + jsonToSend);
+            sendingSequenceNumber++;
         }
         catch(IOException e){
             System.out.println("There was an error with sending the message. Line 30 Send.java");
@@ -44,8 +47,8 @@ public class Send {
     @SuppressWarnings("unchecked")
     private JSONObject messageTemplate(){
         JSONObject message = new JSONObject();
-        message.put("client_type", Receive.client_type);
-        message.put("client_id", Receive.client_id);
+        message.put("client_type", client_type);
+        message.put("client_id", client_id);
         return message;
     }
 
