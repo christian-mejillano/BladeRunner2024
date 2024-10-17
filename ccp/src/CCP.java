@@ -48,37 +48,43 @@ public class CCP {
                     mcpMessageLogic();
                     espMessageLogic();
                 }
-                //If ESP is connected but MCP is disconnected then update the expected BR status to STOPC, send this to the ESP, 
-                //remove the mcpConnectionCheckTimer and attempt to connect to the MCP
-                else if(espConnection && !mcpConnection){
-                    espThread.expectedStatus = "STOPC";
-                    espSender.send_esp_exec(espThread.expectedStatus);
-                    mainTimer.mcpConnectionCheck.cancel();
-                    connectToMCP();
-                }
-                //If the MCP is connected but ESP is disconnected update the actual status to ERR, send this to the MCP, remove all timers
-                //and wait for 3-way handshake
-                else if(!espConnection && mcpConnection){
-                    //set status to ERR
-                    espThread.actualStatus = "ERR";
-                    mcpSender.send_mcp_stat(espThread.actualStatus);
-                    mainTimer.espConnectionCheck.cancel();
-                    mainTimer.espSendSTAT.cancel();
-                    connectToESP();
-                }
-                //If both MCP and ESP are disconnected then remove all timers and start again by running the initaliseConnections function
-                //This will start the whole process again; waiting for ESP connection, establishing ESP connection, creating ESP timers, establishing MCP connection
-                //creating MCP timer
-                else if(!espConnection && !mcpConnection){
-                    mainTimer.espConnectionCheck.cancel();
-                    mainTimer.espSendSTAT.cancel();
-                    mainTimer.mcpConnectionCheck.cancel();
-                    intialiseConnections();
+                //If the MCP and/or ESP aren't connected
+                else{
+                    //First run the message logic in the case that the timer has set either of the connection flag variables to false
+                    //And it has aligned with this check so it could just be that the flag was set to false and the connection isn't actually offline
+                    mcpMessageLogic();
+                    espMessageLogic();
+                    //If ESP is connected but MCP is disconnected then update the expected BR status to STOPC, send this to the ESP, 
+                    //remove the mcpConnectionCheckTimer and attempt to connect to the MCP
+                    if(espConnection && !mcpConnection){
+                        espThread.expectedStatus = "STOPC";
+                        espSender.send_esp_exec(espThread.expectedStatus);
+                        mainTimer.mcpConnectionCheck.cancel();
+                        connectToMCP();
+                    }
+                    //If the MCP is connected but ESP is disconnected update the actual status to ERR, send this to the MCP, remove all timers
+                    //and wait for 3-way handshake
+                    else if(!espConnection && mcpConnection){
+                        //set status to ERR
+                        espThread.actualStatus = "ERR";
+                        mcpSender.send_mcp_stat(espThread.actualStatus);
+                        mainTimer.espConnectionCheck.cancel();
+                        mainTimer.espSendSTAT.cancel();
+                        connectToESP();
+                    }
+                    //If both MCP and ESP are disconnected then remove all timers and start again by running the initaliseConnections function
+                    //This will start the whole process again; waiting for ESP connection, establishing ESP connection, creating ESP timers, establishing MCP connection
+                    //creating MCP timer
+                    else if(!espConnection && !mcpConnection){
+                        mainTimer.espConnectionCheck.cancel();
+                        mainTimer.espSendSTAT.cancel();
+                        mainTimer.mcpConnectionCheck.cancel();
+                        intialiseConnections();
+                    }
                 }
             }
 
         }
-
         //In case there are any errors that haven't been addressed, print out the stack trace
         catch (Exception e) {
             e.printStackTrace();
