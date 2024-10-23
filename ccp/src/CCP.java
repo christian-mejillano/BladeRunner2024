@@ -38,6 +38,15 @@ public class CCP {
             //Run the ESP and MCP Threads which listen for messages
             espThread.start();
             mcpThread.start();
+
+            //Basic sending message logic for testing
+            boolean test = true;
+            while(test){
+                Thread.sleep(1000);
+                espSender.send_esp_strq();
+                mcpSender.send_mcp_stat("CCIN");
+            }
+
             //Attempt to initalise connection with ESP then MCP
             intialiseConnections();
 
