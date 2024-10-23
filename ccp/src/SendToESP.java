@@ -28,7 +28,7 @@ public class SendToESP {
             address = InetAddress.getByName(ipAddress);
         }
         catch(UnknownHostException e){
-            System.out.println("There was an error with the address. Line 21 Send.java");
+            System.out.println("There was an error with the address. Line 31 SendToESP.java");
             System.exit(0);
         }
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
@@ -40,7 +40,7 @@ public class SendToESP {
             sendingSequenceNumber++;
         }
         catch(IOException e){
-            System.out.println("There was an error with sending the message. Line 30 Send.java");
+            System.out.println("There was an error with sending the message. Line 43 SendToESP.java");
         }
     }
 

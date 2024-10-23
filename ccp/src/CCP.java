@@ -126,7 +126,7 @@ public class CCP {
     //Function that checks the contents of the message received from the MCP and sends a message (to the MCP and/or ESP) accordingly
     public static void mcpMessageLogic(){
         //Check if a message has actually been received
-        if(mcpThread.hasReceivedMessage){
+        if(mcpThread.hasReceivedMessage && mcpThread.getValueFromMessage("client").equals("CCP")){
             //If the message is null, send NOIP to MCP
             if(mcpThread.getValueFromMessage("message") == null){
                 mcpSender.send_mcp_noip();
@@ -173,6 +173,8 @@ public class CCP {
                 else if(mcpThread.getValueFromMessage("action").equals("RSLOWC")){
                     espSender.send_esp_exec("RSLOWC");
                 }
+
+                else if(mcpThread.getValueFromMessage("action").equals("NOIP")){}
 
                 //If the action value is disconnect, stop the mcpConnectionCheck timer, stop the mcpThread and send disconnect to the ESP
                 else if(mcpThread.getValueFromMessage("action").equals("DISCONNECT")){
