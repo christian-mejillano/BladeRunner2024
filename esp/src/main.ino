@@ -14,7 +14,7 @@ Servo myServo;
 
 // TO CHANGE PER BLADERUNNER
 const String br = "BR24";
-const int udpPort = 3024;
+const int udpPort = 12000;
 const char *udpAddress = "10.20.30.140"; // Java program IP address
 
 // IP address and port to send UDP data to (Java program)

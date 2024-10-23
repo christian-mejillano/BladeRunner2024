@@ -23,11 +23,6 @@ public class ThreadMCP extends Thread{
         while(true){
             try{
                 byte[] buffer = new byte[1024];
-                try{
-                    //Only "receive" the packet for 500ms
-                    socket.setSoTimeout(500);
-                }
-                catch(SocketException e){}
 
                 //Create a new packet using the buffer
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);

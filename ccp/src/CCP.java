@@ -4,12 +4,12 @@ public class CCP {
     //Variables to be used for connection status checking
     public static boolean espConnection = false;
     public static boolean mcpConnection = false;
-    //10.20.30.11
     //Network variables
     public static final String MCP_IP_ADDRESS = "10.20.30.1";
     public static final String ESP_IP_ADDRESS = "10.20.30.124";
+    public static final int ME_PORT = 3024;
     public static final int MCP_PORT = 2000;
-    public static final int ESP32_PORT = 3024;
+    public static final int ESP32_PORT = 12000;
 
     //Sending objects
     public static SendToMCP mcpSender;
@@ -23,16 +23,16 @@ public class CCP {
     public static void main(String[] args) {
         try {
             //Create new sockets for ESP and MCP on their respective ports
-            DatagramSocket mcpSocket = new DatagramSocket(MCP_PORT);
+            DatagramSocket mcpSendSocket = new DatagramSocket(ME_PORT);
             DatagramSocket espSocket = new DatagramSocket(ESP32_PORT);
 
             //Create new threads and pass through the sockets
             espThread = new ThreadESP(espSocket);
-            mcpThread = new ThreadMCP(mcpSocket);
+            mcpThread = new ThreadMCP(mcpSendSocket);
             mainTimer = new TimerThread();
             
             //Create new sending objects
-            mcpSender = new SendToMCP(mcpSocket);
+            mcpSender = new SendToMCP(mcpSendSocket);
             espSender = new SendToESP(espSocket);
 
             //Run the ESP and MCP Threads which listen for messages
@@ -40,15 +40,19 @@ public class CCP {
             mcpThread.start();
 
             //Basic sending message logic for testing
-            boolean test = true;
+            boolean test = false;
             while(test){
-                Thread.sleep(1000);
-                espSender.send_esp_strq();
-                mcpSender.send_mcp_stat("CCIN");
+                // Thread.sleep(500);
+                // espSender.send_esp_strq();
             }
 
             //Attempt to initalise connection with ESP then MCP
-            intialiseConnections();
+            // intialiseConnections();
+            // Problem here
+            // connectToMCP();
+
+            mcpSender.send_mcp_ccin();
+            mcpConnection = true;
 
             //Runs forever
             while(true){
@@ -134,14 +138,10 @@ public class CCP {
 
     //Function that checks the contents of the message received from the MCP and sends a message (to the MCP and/or ESP) accordingly
     public static void mcpMessageLogic(){
-        //Check if a message has actually been received
-        if(mcpThread.hasReceivedMessage && mcpThread.getValueFromMessage("client").equals("CCP")){
-            //If the message is null, send NOIP to MCP
-            if(mcpThread.getValueFromMessage("message") == null){
-                mcpSender.send_mcp_noip();
-            }
+        //Check if a message has actually been received and isn't null
+        if(mcpThread.hasReceivedMessage && mcpThread.getValueFromMessage("message") != null){
             //If the message is AKIN then set MCP Connection to true as a connection has successfully been established
-            else if(mcpThread.getValueFromMessage("message").equals("AKIN")){
+            if(mcpThread.getValueFromMessage("message").equals("AKIN")){
                 mcpConnection = true;
             }
             
