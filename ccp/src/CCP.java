@@ -39,19 +39,35 @@ public class CCP {
             espThread.start();
             mcpThread.start();
 
-            //Basic sending message logic for testing
-            boolean test = false;
-            while(test){
-                Thread.sleep(500);
-                espSender.send_esp_strq();
-            }
             
-            mcpSender.send_mcp_ccin();
-            mcpConnection = true;
+            while(!espConnection){
+                espMessageLogic();
+            }
+
+            System.out.println("Connection with ESP established");
+
+            mainTimer.setupESPStat();
+            mainTimer.setupESPConnectionCheck();
+
+
+            boolean test = true;
+            while(test){
+                espSender.send_esp_exec("FSLOWC");
+                espMessageLogic();
+                Thread.sleep(500);
+                espSender.send_esp_exec("STOPC");
+                espMessageLogic();
+            }
+
+            while(!mcpConnection){
+                mcpSender.send_mcp_ccin();
+            }
+
+            mainTimer.setupMCPConnectionCheck();
 
             while(true){
-                mcpMessageLogic();
                 espMessageLogic();
+                mcpMessageLogic();
             }
 
             //Attempt to initalise connection with ESP then MCP
@@ -145,14 +161,15 @@ public class CCP {
     public static void mcpMessageLogic(){
         //Check if a message has actually been received and isn't null
         if(mcpThread.hasReceivedMessage && mcpThread.getValueFromMessage("message") != null){
-            mcpConnection = true;
             //If the message is AKIN then set MCP Connection to true as a connection has successfully been established
             if(mcpThread.getValueFromMessage("message").equals("AKIN")){
                 mcpConnection = true;
             }
             
             //If the message is AKST, meaning that the MCP acknowledges a STAT then do nothing. Still needs to be checked so that the final "else" statement doesn't include AKST.
-            else if(mcpThread.getValueFromMessage("message").equals("AKST")){}
+            else if(mcpThread.getValueFromMessage("message").equals("AKST")){
+                mcpConnection = true;
+            }
 
             //If the MCP is requesting a STAT message then set mcpConnection to true and send the actual status
             else if(mcpThread.getValueFromMessage("message").equals("STRQ")){
@@ -163,6 +180,7 @@ public class CCP {
 
             //If the message is EXEC
             else if(mcpThread.getValueFromMessage("message").equals("EXEC")){
+                mcpConnection = true;
                 //Send back NOIP is the action value is null
                 if(mcpThread.getValueFromMessage("action") == null){
                     mcpSender.send_mcp_noip();
@@ -218,7 +236,6 @@ public class CCP {
     public static void espMessageLogic(){
         //Check if a message has actually been received
         if(espThread.hasReceivedMessage){
-            espConnection = true;
             //If the message or sequence values (the values that will be checked later on) are null then do nothing
             if(espThread.getValueFromMessage("message") == null || espThread.getValueFromMessage("sequence") == null){}
 

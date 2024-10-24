@@ -25,7 +25,7 @@ public class ThreadESP extends Thread{
             try{
                 byte[] buffer = new byte[1024];
                 // try{
-                //     //Only "receive" the packet for 500ms
+                //     //Only "receive" the packet for 300ms
                 //     socket.setSoTimeout(300);
                 // }
                 // catch(SocketException e){}
