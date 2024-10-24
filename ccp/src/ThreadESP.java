@@ -14,9 +14,9 @@ public class ThreadESP extends Thread{
     public ThreadESP(DatagramSocket socket){
         this.socket = socket;
         this.hasReceivedMessage = false;
-        //Should be STOPC by default when starting
-        this.expectedStatus = "STOPC";
-        this.actualStatus = "STOPC";
+        //Should be ERR by default when starting
+        this.expectedStatus = "ERR";
+        this.actualStatus = "ERR";
     }
 
     @Override
@@ -24,11 +24,11 @@ public class ThreadESP extends Thread{
         while(true){
             try{
                 byte[] buffer = new byte[1024];
-                try{
-                    //Only "receive" the packet for 500ms
-                    socket.setSoTimeout(300);
-                }
-                catch(SocketException e){}
+                // try{
+                //     //Only "receive" the packet for 500ms
+                //     socket.setSoTimeout(300);
+                // }
+                // catch(SocketException e){}
 
                 //Create a new packet using the buffer
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
