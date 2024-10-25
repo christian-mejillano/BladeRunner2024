@@ -49,7 +49,7 @@ public class ThreadESP extends Thread{
                     hasReceivedMessage = true;
                     messageJSON = stringToJSON(messageInSocket);
 
-                    System.out.println("Received: " + messageInSocket);
+                    System.out.println("Received from ESP: " + messageInSocket);
     
                 } 
             }
@@ -81,7 +81,7 @@ public class ThreadESP extends Thread{
 
     //Given a key, either return its value from jsonMessage or null if it doesn't exist
     public String getValueFromMessage(String key){
-        if(messageJSON != null && (String) messageJSON.get(key) != null){
+        if(messageJSON != null && messageJSON.get(key) != null){
             return (String) messageJSON.get(key);
         }
         return null;

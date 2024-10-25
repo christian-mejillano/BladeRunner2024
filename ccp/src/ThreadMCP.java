@@ -51,7 +51,7 @@ public class ThreadMCP extends Thread{
                     //Add messageJSON to start of the ArrayList
                     lastFiveMessages.add(0, messageJSON);
 
-                    System.out.println("Received: " + messageInSocket);
+                    System.out.println("Received from MCP: " + messageInSocket);
     
                 } 
             }

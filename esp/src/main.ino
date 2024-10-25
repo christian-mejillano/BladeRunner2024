@@ -15,7 +15,7 @@ Servo myServo;
 // TO CHANGE PER BLADERUNNER
 const String br = "BR24";
 const int udpPort = 12000;
-const char *udpAddress = "10.20.30.140"; // Java program IP address
+const char *udpAddress = "10.20.30.1"; // Java program IP address
 
 // IP address and port to send UDP data to (Java program)
 IPAddress local_IP(10, 20, 30, 124);
@@ -136,13 +136,11 @@ void setup()
   Serial.println("End of setup");
 
   // start communication
- // connect();
+   connect();
 }
 
 void loop()
 {
-  currentMillis = millis();
-
   // Continual wifi connection check
   if (WiFi.status() != WL_CONNECTED)
   {
@@ -154,19 +152,19 @@ void loop()
   recieve();
 
   // collision detection
-  collisionDetection();
+  // collisionDetection();
 
   // processing movement
-  // processMovement();
-  // processLighting();
-  // processDoor();
+  processMovement();
+  processLighting();
+  processDoor();
 
   // Check for heartbeat timeout
-  // if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
-  // {
-  //   Serial.println("Heartbeat lost! Connection to Java program is down.");
-  //   connect();
-  // }
+  if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
+  {
+    Serial.println("Heartbeat lost! Connection to Java program is down.");
+    connect();
+  }
 
   // Wait before next iteration
   delay(100);
@@ -175,7 +173,7 @@ void loop()
 void connect()
 {
   boolean ACKED = false;
-  if (!ACKED)
+  while (!ACKED)
   {
     // sending connection
     JsonDocument doc;
@@ -222,7 +220,7 @@ void connect()
       Serial.println("Sent: " + start);
       Serial.println("Sent 3rd handshake to Java program");
     }
-    delay(10);
+    delay(1000);
   }
 }
 
@@ -259,9 +257,8 @@ void recieve()
       doc["client_type"] = "CCP";
       doc["message"] = "STAT";
       doc["client_id"] = BR;
+      //fix the logic
       doc["status"] = currStat;
-      doc["light_color"] = currColour;
-      doc["door_status"] = currDoor;
       String reply;
       serializeJson(doc, reply);
       udp.beginPacket(udpAddress, udpPort);
@@ -329,24 +326,6 @@ void recieve()
       udp.beginPacket(udpAddress, udpPort);
       udp.write((const uint8_t *)reply.c_str(), reply.length());
       udp.endPacket();
-    }
-    {
-      // Send acknowledgment back to Java program
-      JsonDocument doc;
-      doc["client_id"] = "ESP";
-      doc["message"] = "STAT";
-      doc["timestamp"] = millis() / 1000;
-      doc["status"] = "OK";
-      doc["station_id"] = "ST01"; //??
-      doc["action"] = "STAT";
-      String reply;
-      serializeJson(doc, reply);
-      udp.beginPacket(udpAddress, udpPort);
-      udp.write((const uint8_t *)reply.c_str(), reply.length());
-      udp.endPacket();
-
-      Serial.println("Sent: " + reply);
-      Serial.println("Sent heartbeat acknowledgment to Java program");
     }
     udp.flush();
   }
@@ -439,12 +418,12 @@ void processDoor()
 {
   if (currDoor != targetDoor)
   {
-    if (targetDoor == "OPENED")
+    if (targetDoor.equals("OPENED"))
     {
       myServo.write(90);
       currDoor = "OPENED";
     }
-    else if (targetDoor == "CLOSED")
+    else if (targetDoor.equals("CLOSED"))
     {
       myServo.write(0);
       currDoor = "CLOSED";
@@ -455,11 +434,7 @@ void processDoor()
 void collisionDetection()
 {
   long frontDistance = getDistance(FRONT_TRIG_PIN, FRONT_ECHO_PIN);
-  Serial.println("front distance: " + frontDistance);
-  Serial.println("front detected for: " + frontCollisionStartTime);
   long backDistance = getDistance(BACK_TRIG_PIN, BACK_ECHO_PIN);
-  Serial.println("back distance: " + backDistance);
-  Serial.println("back detected for: " + backCollisionStartTime);
 
   // collision for the front sensor
   if (frontDistance <= collisionThreshold)
@@ -496,7 +471,7 @@ void collisionDetection()
         Serial.println("Back Collision detected! Stopping motors.");
         //IMPORTANTchange to move faster
         targetStat = "STOPPED";
-      }
+        }
     }
   }
   else

@@ -53,7 +53,7 @@ public class TimerThread extends Thread{
                     CCP.espConnection = false;
                 }
             }
-        }, 0, 1000);
+        }, 0, 2000);
     }
 
     //Check MCP Connection
@@ -71,6 +71,6 @@ public class TimerThread extends Thread{
                     CCP.mcpConnection = false;
                 }
             }
-        }, 0, 1000);
+        }, 0, 2000);
     }
 }

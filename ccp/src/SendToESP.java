@@ -7,7 +7,7 @@ public class SendToESP {
     //Variables for Send class
     private DatagramSocket socket;
     public int sendingSequenceNumber;
-    public static String clientType = "ccp";
+    public static String clientType = "CCP";
     public static String clientID = "BR24";
     public String ipAddress = CCP.ESP_IP_ADDRESS;
     public int port = CCP.ESP32_PORT;
