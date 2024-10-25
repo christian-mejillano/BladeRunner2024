@@ -27,6 +27,8 @@ String currStat = "STOPPPED";
 String currColour = "RED";
 String currDoor = "CLOSED";
 
+String currBrStat = "STOPC";
+
 // target status
 String targetStat = currStat;
 String targetColour = currColour;
@@ -258,7 +260,7 @@ void recieve()
       doc["message"] = "STAT";
       doc["client_id"] = BR;
       //fix the logic
-      doc["status"] = currStat;
+      doc["status"] = changeStatus();
       String reply;
       serializeJson(doc, reply);
       udp.beginPacket(udpAddress, udpPort);
@@ -428,6 +430,29 @@ void processDoor()
       myServo.write(0);
       currDoor = "CLOSED";
     }
+  }
+}
+
+String changeStatus()
+{
+  if (currStat == "STOPPED") {
+    if (currDoor == "OPENED") {
+      if(currColour == "FLASHING_GREEN") {
+        currBrStat = "STOPO";
+      }
+    } else if (currDoor == "CLOSED") {
+      if(currColour == "FLASHING_RED") {
+        currBrStat = "STOPC";
+      } else if(currColour == "KANYEWEST") {
+        currBrStat = "DISCONNECT";
+      }
+    }
+  } else if (currStat == "FAST" &&currDoor == "CLOSED" && currColour == "GREEN") {
+    currBrStat = "FFASTC";
+  } else if (currStat == "STATION" && currDoor == "CLOSED" && currColour == "YELLOW") {
+    currBrStat = "FSLOWC";
+  } else if (currStat == "RSTATION" && currDoor == "CLOSED" && currColour == "FLASHING_YELLOW") {
+    currBrStat = "RSLOWC";
   }
 }
 
