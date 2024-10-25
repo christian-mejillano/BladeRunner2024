@@ -220,12 +220,12 @@ public class CCP {
             //CCIN is the only time we don't need to check the sequence number, hence in the order of else ifs, this check comes second.
             //If the message isn't CCIN then check if the sequence number matches with the sequence number sent on the last message
             //If the sequence number doesn't match then send an EXEC message with the expectedStatus
-            else if((Long)espThread.messageJSON.get("sequence") != espSender.sendingSequenceNumber - 1){
-                espSender.send_esp_exec(espThread.expectedStatus);
-            }
+            // else if((Long)espThread.messageJSON.get("sequence") != espSender.sendingSequenceNumber - 1){
+            //     espSender.send_esp_exec(espThread.expectedStatus);
+            // }
             
             //If the message is AKIN/ACk then a connection (through the 3-way handshake) has been established so set espConnection to true
-            else if(espThread.getValueFromMessage("message").equals("AKIN/ACK")){
+            else if(espThread.getValueFromMessage("message").equals("AKIN")){
                 espThread.expectedStatus = "STOPC";
                 espThread.actualStatus = "STOPC";
                 espConnection = true;
@@ -234,6 +234,7 @@ public class CCP {
             //If the message is STAT then set espConnection to true and check if the actual status matches the expectedStatus
             else if(espThread.getValueFromMessage("message").equals("STAT")){
                 espConnection = true;
+                System.out.println(espThread.actualStatus);
                 if(espThread.getValueFromMessage("status") == null){}
                 
                 //If the actual status doesn't match the expted status then update the actualStatus variable, send a STAT to MCP and send an EXEC with the

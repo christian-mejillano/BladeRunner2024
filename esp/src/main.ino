@@ -222,7 +222,7 @@ void connect()
       Serial.println("Sent: " + start);
       Serial.println("Sent 3rd handshake to Java program");
     }
-    delay(1000);
+    delay(2000);
   }
 }
 
