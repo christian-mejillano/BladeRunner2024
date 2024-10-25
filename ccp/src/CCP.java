@@ -45,58 +45,14 @@ public class CCP {
         espThread.start();
         mcpThread.start();
 
-        intialiseConnections();
+        connectToESP();
+        connectToMCP();
 
         // Runs forever
         while(true){
             mcpMessageLogic();
             espMessageLogic();
-        //     //If both ESP and MCP are connected then run their respective message logic functions
-        //     if(espConnection && mcpConnection){
-        //         mcpMessageLogic();
-        //         espMessageLogic();
-        //     }
-        //     //If the MCP and/or ESP aren't connected
-        //     else{
-        //         //First run the message logic in the case that the timer has set either of the connection flag variables to false
-        //         //And it has aligned with this check so it could just be that the flag was set to false and the connection isn't actually offline
-        //         mcpMessageLogic();
-        //         espMessageLogic();
-        //         //If ESP is connected but MCP is disconnected then update the expected BR status to STOPC, send this to the ESP, 
-        //         //remove the mcpConnectionCheckTimer and attempt to connect to the MCP
-        //         if(espConnection && !mcpConnection){
-        //             espThread.expectedStatus = "STOPC";
-        //             espSender.send_esp_exec(espThread.expectedStatus);
-        //             mainTimer.mcpConnectionCheck.cancel();
-        //             connectToMCP();
-        //         }
-        //         //If the MCP is connected but ESP is disconnected update the actual status to ERR, send this to the MCP, remove all timers
-        //         //and wait for 3-way handshake
-        //         else if(!espConnection && mcpConnection){
-        //             //set status to ERR
-        //             espThread.actualStatus = "ERR";
-        //             mcpSender.send_mcp_stat(espThread.actualStatus);
-        //             mainTimer.espConnectionCheck.cancel();
-        //             mainTimer.espSendSTAT.cancel();
-        //             // connectToESP();
-        //         }
-        //         //If both MCP and ESP are disconnected then remove all timers and start again by running the initaliseConnections function
-        //         //This will start the whole process again; waiting for ESP connection, establishing ESP connection, creating ESP timers, establishing MCP connection
-        //         //creating MCP timer
-        //         else if(!espConnection && !mcpConnection){
-        //             mainTimer.espConnectionCheck.cancel();
-        //             mainTimer.espSendSTAT.cancel();
-        //             mainTimer.mcpConnectionCheck.cancel();
-        //             intialiseConnections();
-        //         }
-        //     }
         }
-    }
-
-    //Function that calls two other functions; one for connecting to ESP and another for MCP
-    public static void intialiseConnections(){
-        connectToESP();
-        connectToMCP();
     }
 
     //Function that is used to connect to the ESP
@@ -127,33 +83,30 @@ public class CCP {
             }
         }
         //Once mcpConnection is true, meaning that connection with the MCP has been established, (re)crate the timer for MCP connection check
-        mainTimer.setupMCPConnectionCheck();
+        
+        /* 
+        * mainTimer.setupMCPConnectionCheck(); 
+        */
     }
 
     //Function that checks the contents of the message received from the MCP and sends a message (to the MCP and/or ESP) accordingly
     public static void mcpMessageLogic(){
         //Check if a message has actually been received and isn't null
         if(mcpThread.hasReceivedMessage && mcpThread.getValueFromMessage("message") != null){
+            mcpConnection = true;
             //If the message is AKIN then set MCP Connection to true as a connection has successfully been established
-            if(mcpThread.getValueFromMessage("message").equals("AKIN")){
-                mcpConnection = true;
-            }
+            if(mcpThread.getValueFromMessage("message").equals("AKIN")){}
             
             //If the message is AKST, meaning that the MCP acknowledges a STAT then do nothing. Still needs to be checked so that the final "else" statement doesn't include AKST.
-            else if(mcpThread.getValueFromMessage("message").equals("AKST")){
-                mcpConnection = true;
-            }
+            else if(mcpThread.getValueFromMessage("message").equals("AKST")){}
 
             //If the MCP is requesting a STAT message then set mcpConnection to true and send the actual status
             else if(mcpThread.getValueFromMessage("message").equals("STRQ")){
-                mcpConnection = true;
-                espThread.expectedStatus = mcpThread.getValueFromMessage("message");
                 mcpSender.send_mcp_stat(espThread.actualStatus);
             }
 
             //If the message is EXEC
             else if(mcpThread.getValueFromMessage("message").equals("EXEC")){
-                mcpConnection = true;
                 //Send back NOIP is the action value is null
                 if(mcpThread.getValueFromMessage("action") == null){
                     mcpSender.send_mcp_noip();
@@ -162,22 +115,27 @@ public class CCP {
                 //If the action value matches with any of the following, then forward it to the ESP
                 else if(mcpThread.getValueFromMessage("action").equals("STOPC")){
                     espSender.send_esp_exec("STOPC");
+                    espThread.expectedStatus = "STOPC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("STOPO")){
                     espSender.send_esp_exec("STOPO");
+                    espThread.expectedStatus = "STOPO";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("FSLOWC")){
                     espSender.send_esp_exec("FSLOWC");
+                    espThread.expectedStatus = "FSLOWC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("FFASTC")){
                     espSender.send_esp_exec("FFASTC");
+                    espThread.expectedStatus = "FFASTC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("RSLOWC")){
                     espSender.send_esp_exec("RSLOWC");
+                    espThread.expectedStatus = "RSLOWC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("NOIP")){}
@@ -209,32 +167,22 @@ public class CCP {
     public static void espMessageLogic(){
         //Check if a message has actually been received
         if(espThread.hasReceivedMessage && espThread.getValueFromMessage("message") != null){
+            espConnection = true;
             //If the message is CCIN then send AKIN
             if(espThread.getValueFromMessage("message").equals("CCIN")){
-                espConnection = true;
                 espSender.send_esp_akin();
             }
             //If the message or sequence values (the values that will be checked later on) are null then do nothing
             else if(espThread.getValueFromMessage("message") == null || espThread.messageJSON.get("sequence") == null){}
-
-            //CCIN is the only time we don't need to check the sequence number, hence in the order of else ifs, this check comes second.
-            //If the message isn't CCIN then check if the sequence number matches with the sequence number sent on the last message
-            //If the sequence number doesn't match then send an EXEC message with the expectedStatus
-            // else if((Long)espThread.messageJSON.get("sequence") != espSender.sendingSequenceNumber - 1){
-            //     espSender.send_esp_exec(espThread.expectedStatus);
-            // }
             
             //If the message is AKIN/ACk then a connection (through the 3-way handshake) has been established so set espConnection to true
             else if(espThread.getValueFromMessage("message").equals("AKIN")){
                 espThread.expectedStatus = "STOPC";
                 espThread.actualStatus = "STOPC";
-                espConnection = true;
             }
 
             //If the message is STAT then set espConnection to true and check if the actual status matches the expectedStatus
             else if(espThread.getValueFromMessage("message").equals("STAT")){
-                espConnection = true;
-                System.out.println(espThread.actualStatus);
                 if(espThread.getValueFromMessage("status") == null){}
                 
                 //If the actual status doesn't match the expted status then update the actualStatus variable, send a STAT to MCP and send an EXEC with the

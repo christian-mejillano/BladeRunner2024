@@ -24,12 +24,6 @@ public class ThreadESP extends Thread{
         while(true){
             try{
                 byte[] buffer = new byte[1024];
-                // try{
-                //     //Only "receive" the packet for 300ms
-                //     socket.setSoTimeout(300);
-                // }
-                // catch(SocketException e){}
-
                 //Create a new packet using the buffer
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 try{

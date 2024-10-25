@@ -53,7 +53,6 @@ public class SendToMCP {
         JSONObject message = new JSONObject();
         message.put("client_type", clientType);
         message.put("client_id", clientID);
-        message.put("client_id", clientID);
         message.put("sequence_number", sendingSequenceNumber);
         return message;
     }
