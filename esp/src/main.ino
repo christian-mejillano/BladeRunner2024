@@ -136,7 +136,7 @@ void setup()
   Serial.println("End of setup");
 
   // start communication
-  connect();
+ // connect();
 }
 
 void loop()
@@ -154,19 +154,19 @@ void loop()
   recieve();
 
   // collision detection
-  // collisionDetection();
+  collisionDetection();
 
   // processing movement
-  processMovement();
-  processLighting();
-  processDoor();
+  // processMovement();
+  // processLighting();
+  // processDoor();
 
   // Check for heartbeat timeout
-  if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
-  {
-    Serial.println("Heartbeat lost! Connection to Java program is down.");
-    connect();
-  }
+  // if (currentMillis - lastHeartbeatReceived > heartbeatTimeout)
+  // {
+  //   Serial.println("Heartbeat lost! Connection to Java program is down.");
+  //   connect();
+  // }
 
   // Wait before next iteration
   delay(100);
@@ -455,10 +455,14 @@ void processDoor()
 void collisionDetection()
 {
   long frontDistance = getDistance(FRONT_TRIG_PIN, FRONT_ECHO_PIN);
+  Serial.println("front distance: " + frontDistance);
+  Serial.println("front detected for: " + frontCollisionStartTime);
   long backDistance = getDistance(BACK_TRIG_PIN, BACK_ECHO_PIN);
+  Serial.println("back distance: " + backDistance);
+  Serial.println("back detected for: " + backCollisionStartTime);
 
   // collision for the front sensor
-  if (frontDistance <= collisionThreshold || backDistance <= collisionThreshold)
+  if (frontDistance <= collisionThreshold)
   {
     if (frontCollisionStartTime == 0)
     {
@@ -468,7 +472,7 @@ void collisionDetection()
     {
       if (millis() - frontCollisionStartTime > collisionDetectionTime)
       {
-        Serial.println("Back Collision detected! Stopping motors.");
+        Serial.println("Front Collision detected! Stopping motors.");
         targetStat = "STOPPED";
       }
     }
