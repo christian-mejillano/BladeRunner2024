@@ -61,7 +61,6 @@ public class CCP {
         while(!espConnection){
             //Both functions are called here, in the case that the ESP is disconnected and MCP is connected
             espMessageLogic();
-            mcpMessageLogic();
         }
         //Once espConnection is true, meaning that connection with the ESP has been established, (re)create the timers for ESP connection check and sending RQSTAT
         // mainTimer.setupESPConnectionCheck();
@@ -82,11 +81,6 @@ public class CCP {
                 e.printStackTrace();
             }
         }
-        //Once mcpConnection is true, meaning that connection with the MCP has been established, (re)crate the timer for MCP connection check
-        
-        /* 
-        * mainTimer.setupMCPConnectionCheck(); 
-        */
     }
 
     //Function that checks the contents of the message received from the MCP and sends a message (to the MCP and/or ESP) accordingly
@@ -115,27 +109,22 @@ public class CCP {
                 //If the action value matches with any of the following, then forward it to the ESP
                 else if(mcpThread.getValueFromMessage("action").equals("STOPC")){
                     espSender.send_esp_exec("STOPC");
-                    espThread.expectedStatus = "STOPC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("STOPO")){
                     espSender.send_esp_exec("STOPO");
-                    espThread.expectedStatus = "STOPO";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("FSLOWC")){
                     espSender.send_esp_exec("FSLOWC");
-                    espThread.expectedStatus = "FSLOWC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("FFASTC")){
                     espSender.send_esp_exec("FFASTC");
-                    espThread.expectedStatus = "FFASTC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("RSLOWC")){
                     espSender.send_esp_exec("RSLOWC");
-                    espThread.expectedStatus = "RSLOWC";
                 }
 
                 else if(mcpThread.getValueFromMessage("action").equals("NOIP")){}
@@ -177,30 +166,18 @@ public class CCP {
             
             //If the message is AKIN/ACk then a connection (through the 3-way handshake) has been established so set espConnection to true
             else if(espThread.getValueFromMessage("message").equals("AKIN")){
-                espThread.expectedStatus = "STOPC";
                 espThread.actualStatus = "STOPC";
             }
 
-            //If the message is STAT then set espConnection to true and check if the actual status matches the expectedStatus
+            //If the message is STAT then set espConnection to true and update status
             else if(espThread.getValueFromMessage("message").equals("STAT")){
-                if(espThread.getValueFromMessage("status") == null){}
-                
-                //If the actual status doesn't match the expted status then update the actualStatus variable, send a STAT to MCP and send an EXEC with the
-                //expected status to the ESP
-                else if(!espThread.getValueFromMessage("status").equals(espThread.expectedStatus)){
+                if(espThread.getValueFromMessage("status") != null){
                     espThread.actualStatus = espThread.getValueFromMessage("status");
-                    espSender.send_esp_exec(espThread.expectedStatus);
-                    mcpSender.send_mcp_stat(espThread.actualStatus);
-                }
-                //If actualStatus and expectedStatus match then set actualStatus to expectedStatus
-                else{
-                    espThread.actualStatus = espThread.expectedStatus;
-                }
+                } 
             }
 
             //If the message is ACK (EXEC has been executed) then updated actualStatus and send AKEX to MCP
             else if(espThread.getValueFromMessage("message").equals("AKEX")){
-                espThread.actualStatus = espThread.expectedStatus;
                 mcpSender.send_mcp_akex();
             }
 

@@ -8,14 +8,12 @@ public class ThreadESP extends Thread{
 
     public boolean hasReceivedMessage;
     public JSONObject messageJSON; 
-    public String expectedStatus;
     public String actualStatus;
 
     public ThreadESP(DatagramSocket socket){
         this.socket = socket;
         this.hasReceivedMessage = false;
         //Should be ERR by default when starting
-        this.expectedStatus = "ERR";
         this.actualStatus = "ERR";
     }
 
