@@ -1,6 +1,7 @@
-# 1 "/var/folders/0p/1n8x57qd2_7gv3nfsgcq_hs80000gn/T/tmpnagmx_jz"
+# 1 "/var/folders/0p/1n8x57qd2_7gv3nfsgcq_hs80000gn/T/tmpp_c1hm1j"
 #include <Arduino.h>
 # 1 "/Users/christianmejillano/Desktop/uni/ENGG3000/BladeRunner2024/esp/src/movement.ino"
+
 const int MOTOR_PIN_1 = 19;
 const int MOTOR_PIN_2 = 21;
 const int MOTOR_SPEED_PIN = 27;
@@ -16,7 +17,7 @@ void processDoor();
 String changeStatus();
 void collisionDetection();
 long getDistance(int trigPin, int echoPin);
-#line 5 "/Users/christianmejillano/Desktop/uni/ENGG3000/BladeRunner2024/esp/src/movement.ino"
+#line 6 "/Users/christianmejillano/Desktop/uni/ENGG3000/BladeRunner2024/esp/src/movement.ino"
 void setup()
 {
   Serial.begin(115200);
@@ -34,10 +35,26 @@ void setup()
 
 void loop()
 {
+    Serial.println("Forward fast");
     analogWrite(MOTOR_SPEED_PIN, 255);
     digitalWrite(MOTOR_PIN_1, HIGH);
     digitalWrite(MOTOR_PIN_2, LOW);
-    currStat = "FAST";
+
+    delay(2000);
+
+    Serial.println("Stopped");
+    analogWrite(MOTOR_SPEED_PIN, 0);
+    digitalWrite(MOTOR_PIN_1, LOW);
+    digitalWrite(MOTOR_PIN_2, LOW);
+
+    delay(2000);
+
+    Serial.println("Reverse");
+    analogWrite(MOTOR_SPEED_PIN, 255);
+    digitalWrite(MOTOR_PIN_1, LOW);
+    digitalWrite(MOTOR_PIN_2, HIGH);
+
+    delay(2000);
 }
 # 1 "/Users/christianmejillano/Desktop/uni/ENGG3000/BladeRunner2024/esp/src/main.ino"
 

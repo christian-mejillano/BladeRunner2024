@@ -1,4 +1,3 @@
-#include <ArduinoJson.h>
 
 const int MOTOR_PIN_1 = 19;
 const int MOTOR_PIN_2 = 21;
