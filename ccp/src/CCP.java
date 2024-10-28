@@ -46,12 +46,34 @@ public class CCP {
         mcpThread.start();
 
         connectToESP();
-        connectToMCP();
+        // connectToMCP();
 
         // Runs forever
+        // while(true){
+        //     espMessageLogic();
+        //     mcpMessageLogic();
+        // }
+
         while(true){
-            mcpMessageLogic();
             espMessageLogic();
+            espSender.send_esp_exec("FFASTC");
+            espMessageLogic();
+            try {
+                Thread.sleep(1000);
+            } 
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            espMessageLogic();
+            espSender.send_esp_exec("STOPC");
+            espMessageLogic();
+            try {
+                Thread.sleep(1000);
+            } 
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -156,9 +178,10 @@ public class CCP {
     public static void espMessageLogic(){
         //Check if a message has actually been received
         if(espThread.hasReceivedMessage && espThread.getValueFromMessage("message") != null){
-            espConnection = true;
+            espSender.send_esp_exec("FFASTC");
             //If the message is CCIN then send AKIN
             if(espThread.getValueFromMessage("message").equals("CCIN")){
+                System.out.println("received ccin");
                 espSender.send_esp_akin();
             }
             //If the message or sequence values (the values that will be checked later on) are null then do nothing
@@ -166,11 +189,13 @@ public class CCP {
             
             //If the message is AKIN/ACk then a connection (through the 3-way handshake) has been established so set espConnection to true
             else if(espThread.getValueFromMessage("message").equals("AKIN")){
+                espConnection = true;
                 espThread.actualStatus = "STOPC";
             }
 
             //If the message is STAT then set espConnection to true and update status
             else if(espThread.getValueFromMessage("message").equals("STAT")){
+                espConnection = true;
                 if(espThread.getValueFromMessage("status") != null){
                     espThread.actualStatus = espThread.getValueFromMessage("status");
                 } 
@@ -178,6 +203,7 @@ public class CCP {
 
             //If the message is ACK (EXEC has been executed) then updated actualStatus and send AKEX to MCP
             else if(espThread.getValueFromMessage("message").equals("AKEX")){
+                espConnection = true;
                 mcpSender.send_mcp_akex();
             }
 
