@@ -189,7 +189,6 @@ void connect()
     udp.endPacket();
 
     Serial.println("Sent: " + start);
-    Serial.println("Sent check up heartbeat to Java program");
 
     // recieving packet
     int packetSize = udp.parsePacket();
