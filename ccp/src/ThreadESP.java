@@ -9,12 +9,14 @@ public class ThreadESP extends Thread{
     public boolean hasReceivedMessage;
     public JSONObject messageJSON; 
     public String actualStatus;
+    public boolean espConnection;
 
     public ThreadESP(DatagramSocket socket){
         this.socket = socket;
         this.hasReceivedMessage = false;
         //Should be ERR by default when starting
         this.actualStatus = "ERR";
+        this.espConnection = false;
     }
 
     @Override
@@ -42,7 +44,19 @@ public class ThreadESP extends Thread{
                     messageJSON = stringToJSON(messageInSocket);
 
                     System.out.println("Received from ESP: " + messageInSocket);
-    
+
+                    if(messageJSON.get("message") != null && ((String)messageJSON.get("message")).equals("CCIN")){
+                        CCP.espSender.send_esp_akin();
+                    }
+
+                    if(messageJSON.get("message") != null && ((String)messageJSON.get("message")).equals("AKIN")){
+                        this.espConnection = true;
+                        actualStatus = "STOPC";
+                        CCP.mainTimer.setupESPStat();
+
+                        CCP.mcpThread.start();
+                        CCP.connectToMCP();
+                    }
                 } 
             }
             

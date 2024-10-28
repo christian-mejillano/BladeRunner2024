@@ -21,7 +21,6 @@ public class SendToESP {
 
     //Function to send the message given a String (should be JSON)
     public void sendMessage(String jsonToSend){
-        System.out.println(jsonToSend);
         //Create a new packet and send it to the given ip address and port
         byte[] buffer = jsonToSend.getBytes();
         InetAddress address = null;

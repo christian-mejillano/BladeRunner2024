@@ -42,51 +42,13 @@ public class CCP {
         espSender = new SendToESP(espSocket);
 
         //Run the ESP and MCP Threads which listen for messages
-        espThread.start();
-        mcpThread.start();
-
-        connectToESP();
-        // connectToMCP();
+        espThread.start();        
 
         // Runs forever
-        // while(true){
-        //     espMessageLogic();
-        //     mcpMessageLogic();
-        // }
-
         while(true){
-            espMessageLogic();
-            espSender.send_esp_exec("FFASTC");
-            espMessageLogic();
-            try {
-                Thread.sleep(1000);
-            } 
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            espMessageLogic();
-            espSender.send_esp_exec("STOPC");
-            espMessageLogic();
-            try {
-                Thread.sleep(1000);
-            } 
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    //Function that is used to connect to the ESP
-    public static void connectToESP(){
-        //While the ESP isn't connected, run the esp and mcp logic functions. espConnection will only be true if STAT or AKIN/ACK is received from the ESP
-        while(!espConnection){
-            //Both functions are called here, in the case that the ESP is disconnected and MCP is connected
+            mcpMessageLogic();
             espMessageLogic();
         }
-        //Once espConnection is true, meaning that connection with the ESP has been established, (re)create the timers for ESP connection check and sending RQSTAT
-        // mainTimer.setupESPConnectionCheck();
-        mainTimer.setupESPStat();
     }
 
     //Function that is used to connect to the MCP
@@ -178,32 +140,20 @@ public class CCP {
     public static void espMessageLogic(){
         //Check if a message has actually been received
         if(espThread.hasReceivedMessage && espThread.getValueFromMessage("message") != null){
-            espSender.send_esp_exec("FFASTC");
-            //If the message is CCIN then send AKIN
-            if(espThread.getValueFromMessage("message").equals("CCIN")){
-                System.out.println("received ccin");
-                espSender.send_esp_akin();
-            }
-            //If the message or sequence values (the values that will be checked later on) are null then do nothing
-            else if(espThread.getValueFromMessage("message") == null || espThread.messageJSON.get("sequence") == null){}
-            
-            //If the message is AKIN/ACk then a connection (through the 3-way handshake) has been established so set espConnection to true
-            else if(espThread.getValueFromMessage("message").equals("AKIN")){
-                espConnection = true;
-                espThread.actualStatus = "STOPC";
-            }
+            espConnection = true;
 
-            //If the message is STAT then set espConnection to true and update status
+            //If the message or sequence values (the values that will be checked later on) are null then do nothing
+            if(espThread.getValueFromMessage("message") == null || espThread.messageJSON.get("sequence") == null){}
+
+            //If the message is STAT then set espConnection to true and check if the actual status matches the expectedStatus
             else if(espThread.getValueFromMessage("message").equals("STAT")){
-                espConnection = true;
                 if(espThread.getValueFromMessage("status") != null){
                     espThread.actualStatus = espThread.getValueFromMessage("status");
-                } 
+                }
             }
 
             //If the message is ACK (EXEC has been executed) then updated actualStatus and send AKEX to MCP
             else if(espThread.getValueFromMessage("message").equals("AKEX")){
-                espConnection = true;
                 mcpSender.send_mcp_akex();
             }
 
