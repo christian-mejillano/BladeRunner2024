@@ -254,12 +254,13 @@ void recieve()
 
     if (message == "STRQ")
     {
+      changeStatus();
       JsonDocument doc;
       doc["client_type"] = "CCP";
       doc["message"] = "STAT";
-      doc["client_id"] = BR;
+      doc["client_id"] = br;
       //fix the logic
-      doc["status"] = changeStatus();
+      doc["status"] = currBrStat;
       String reply;
       serializeJson(doc, reply);
       udp.beginPacket(udpAddress, udpPort);
@@ -351,7 +352,7 @@ void processMovement()
       analogWrite(MOTOR_SPEED_PIN, 50);
       digitalWrite(MOTOR_PIN_1, HIGH);
       digitalWrite(MOTOR_PIN_2, LOW);
-      if (photoValue == HIGH)
+      if (photoValue == LOW)
       {
         targetStat = "STOPPED";
         targetDoor = "CLOSED";
