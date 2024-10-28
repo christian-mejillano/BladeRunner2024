@@ -1,40 +1,44 @@
-// #include <SoftwareSerial.h>
+#include <ArduinoJson.h>
 
-// #define MAXSPEED 10
-// #define SPEEDINC 2
+const int MOTOR_PIN_1 = 19;
+const int MOTOR_PIN_2 = 21;
+const int MOTOR_SPEED_PIN = 27;
 
-// class Movement  {
-//   private:
-//     int speed;
-//     const int MaxSpeed = 10; //these two values cannot be changed
+void setup()
+{
+  Serial.begin(115200);
 
-// public:
-//     Movement() {
-//       speed = 0;
-//     }
- 
-// void setSpeed(int s) { // doesnt exceed max speed
-//       if (s > MAXSPEED) {
-//         speed = MAXSPEED;
-//       } else {
-//         speed = s;
-//       }
-//  }
+  // sensor pinning
+  pinMode(MOTOR_PIN_1, OUTPUT);
+  pinMode(MOTOR_PIN_2, OUTPUT);
+  pinMode(MOTOR_SPEED_PIN, OUTPUT);
 
-// void forward() { // had to assume motorForward exists
-//     motor.write(speed);
+  // stop motors and set status to stopped
+  // close doors and set doors to closed
+  // set led to red and currLED to red
+  analogWrite(MOTOR_SPEED_PIN, 0);
+}
 
-// }
-// void stop() {
-//       speed = 0; // had to assume motorForward exists
-//       motor.write(speed); 
-// }
-   
-   
-// void acceleration() {
-//     if (speed < MaxSpeed ){
-//         speed = speed + SPEEDINC;
-//     }
-// }
+void loop() 
+{
+    Serial.println("Forward fast");
+    analogWrite(MOTOR_SPEED_PIN, 255);
+    digitalWrite(MOTOR_PIN_1, HIGH);
+    digitalWrite(MOTOR_PIN_2, LOW);
 
-// };
+    delay(2000);
+
+    Serial.println("Stopped");
+    analogWrite(MOTOR_SPEED_PIN, 0);
+    digitalWrite(MOTOR_PIN_1, LOW);
+    digitalWrite(MOTOR_PIN_2, LOW);
+
+    delay(2000);
+
+    Serial.println("Reverse");
+    analogWrite(MOTOR_SPEED_PIN, 255);
+    digitalWrite(MOTOR_PIN_1, LOW);
+    digitalWrite(MOTOR_PIN_2, HIGH);
+
+    delay(2000);
+}
