@@ -154,7 +154,7 @@ void loop()
   recieve();
 
   // collision detection
-  // collisionDetection();
+  collisionDetection();
 
   // processing movement
   processMovement();
@@ -363,7 +363,7 @@ void processMovement()
       analogWrite(MOTOR_SPEED_PIN, 50);
       digitalWrite(MOTOR_PIN_1, LOW);
       digitalWrite(MOTOR_PIN_2, HIGH);
-      if (photoValue == HIGH)
+      if (photoValue == LOW)
       {
         targetStat = "STOPPED";
         targetDoor = "CLOSED";
@@ -459,7 +459,7 @@ String changeStatus()
 void collisionDetection()
 {
   long frontDistance = getDistance(FRONT_TRIG_PIN, FRONT_ECHO_PIN);
-  long backDistance = getDistance(BACK_TRIG_PIN, BACK_ECHO_PIN);
+  // long backDistance = getDistance(BACK_TRIG_PIN, BACK_ECHO_PIN);
 
   // collision for the front sensor
   if (frontDistance <= collisionThreshold)
@@ -483,26 +483,26 @@ void collisionDetection()
   }
 
   // collision for the back sensor
-  if (backDistance <= collisionThreshold)
-  {
-    if (backCollisionStartTime == 0)
-    {
-      backCollisionStartTime = millis();
-    }
-    else
-    {
-      if (millis() - backCollisionStartTime > collisionDetectionTime)
-      {
-        Serial.println("Back Collision detected! Stopping motors.");
-        //IMPORTANTchange to move faster
-        targetStat = "STOPPED";
-        }
-    }
-  }
-  else
-  {
-    backCollisionStartTime = 0;
-  }
+  // if (backDistance <= collisionThreshold)
+  // {
+  //   if (backCollisionStartTime == 0)
+  //   {
+  //     backCollisionStartTime = millis();
+  //   }
+  //   else
+  //   {
+  //     if (millis() - backCollisionStartTime > collisionDetectionTime)
+  //     {
+  //       Serial.println("Back Collision detected! Stopping motors.");
+  //       //IMPORTANTchange to move faster
+  //       targetStat = "STOPPED";
+  //       }
+  //   }
+  // }
+  // else
+  // {
+  //   backCollisionStartTime = 0;
+  // }
 }
 
 long getDistance(int trigPin, int echoPin)
