@@ -31,7 +31,9 @@ public class ThreadMCP extends Thread{
                     socket.receive(packet);
                 }
                 //Just need to catch the exception to satisfy the socket.receive class requirements
-                catch(IOException e){}
+                catch(IOException e){
+                    System.out.println("MCP thread issue line 35");
+                }
 
                 String messageInSocket = new String(packet.getData(), 0, packet.getLength());
                 int messageByteSum = 0;
@@ -56,13 +58,17 @@ public class ThreadMCP extends Thread{
                 } 
             }
             
-            catch(Exception e){}
+            catch(Exception e){
+                System.out.println("MCP thread issue line 62");
+            }
 
             try {
                 Thread.sleep(100);
             } 
             
-            catch (InterruptedException e) {}
+            catch (InterruptedException e) {
+                System.out.println("MCP thread issue line 70");
+            }
         }
     }
 
